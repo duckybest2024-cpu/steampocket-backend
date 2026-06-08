@@ -1,5 +1,5 @@
 {
-  "name": "steampocket-backend",
+  "name": "casino-aurelius",
   "version": "1.0.0",
   "description": "Provably-fair casino backend — dice, crash, mines, limbo, roulette, blackjack, plinko, slots",
   "main": "dist/server.js",

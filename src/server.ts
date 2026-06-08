@@ -14,7 +14,7 @@ const io = new Server(httpServer, {
 new CrashEngine(io);
 
 httpServer.listen(config.port, () => {
-  console.log(`🎰 steampocket-casino listening on :${config.port}`);
+  console.log(`🎰 Casino Aurelius listening on :${config.port}`);
   console.log(`   REST API:   http://localhost:${config.port}`);
   console.log(`   Crash feed: ws://localhost:${config.port}/crash`);
 });

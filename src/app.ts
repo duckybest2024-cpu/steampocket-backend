@@ -17,7 +17,7 @@ export function createApp() {
   app.use(cors());
   app.use(express.json());
 
-  app.get("/health", (_req, res) => res.json({ ok: true, name: "steampocket-casino", time: new Date().toISOString() }));
+  app.get("/health", (_req, res) => res.json({ ok: true, name: "casino-aurelius", time: new Date().toISOString() }));
 
   // The playable web UI — a static single-page app that talks to the API below.
   app.use(express.static(path.join(__dirname, "..", "public")));

@@ -1,11 +1,11 @@
 /* Thin REST client — wraps fetch, attaches the JWT, normalises errors. */
 const Api = (() => {
-  let token = localStorage.getItem("steampocket_token") || null;
+  let token = localStorage.getItem("casino_aurelius_token") || null;
 
   function setToken(t) {
     token = t;
-    if (t) localStorage.setItem("steampocket_token", t);
-    else localStorage.removeItem("steampocket_token");
+    if (t) localStorage.setItem("casino_aurelius_token", t);
+    else localStorage.removeItem("casino_aurelius_token");
   }
 
   function getToken() {
