@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { authRouter } from "./routes/auth";
 import { fairnessRouter } from "./routes/fairness";
 import { walletRouter } from "./routes/wallet";
@@ -17,6 +18,9 @@ export function createApp() {
   app.use(express.json());
 
   app.get("/health", (_req, res) => res.json({ ok: true, name: "steampocket-casino", time: new Date().toISOString() }));
+
+  // The playable web UI — a static single-page app that talks to the API below.
+  app.use(express.static(path.join(__dirname, "..", "public")));
 
   app.use("/auth", authRouter);
   app.use("/fairness", fairnessRouter);
