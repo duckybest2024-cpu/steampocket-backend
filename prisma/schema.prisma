@@ -1,0 +1,98 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  balance       Int      @default(100000) // balance stored in cents (e.g. 100000 = $1,000.00 starting bonus)
+  level         Int      @default(1)
+  xp            Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  // Provably-fair seed pair currently active for this user
+  clientSeed    String   @default("default-client-seed")
+  serverSeed    String
+  serverSeedHash String
+  nonce         Int      @default(0)
+
+  bets          Bet[]
+  transactions  Transaction[]
+  seedHistory   SeedRotation[]
+  rakeback      RakebackClaim[]
+
+  @@index([balance])
+}
+
+model SeedRotation {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  serverSeed      String   // revealed (previous) server seed
+  serverSeedHash  String
+  clientSeed      String
+  nonceCount      Int
+  rotatedAt       DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Bet {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  game        String   // dice | crash | mines | limbo | roulette | blackjack | plinko | slots
+  amount      Int      // wager, in cents
+  payout      Int      // amount returned to user, in cents (0 = total loss)
+  multiplier  Float    // resulting multiplier (payout / amount), 0 if lost
+  state       String   // JSON blob describing the round (per-game shape)
+  result      String   // "win" | "loss"
+  clientSeed  String
+  serverSeed  String   // revealed seed used for this bet (hashed seed was shown beforehand)
+  nonce       Int
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([game])
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // deposit | withdrawal | bet | payout | rakeback | bonus | levelup_bonus
+  amount    Int      // signed delta, in cents
+  balance   Int      // resulting balance after applying this transaction
+  reference String?  // related bet id, claim id, etc.
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model RakebackClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Int
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model CrashRound {
+  id           String   @id @default(cuid())
+  roundNumber  Int      @unique
+  serverSeed   String
+  serverSeedHash String
+  crashPoint   Float
+  state        String   // betting | running | crashed
+  startedAt    DateTime @default(now())
+  endedAt      DateTime?
+}

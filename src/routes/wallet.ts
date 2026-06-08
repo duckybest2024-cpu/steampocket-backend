@@ -1,0 +1,119 @@
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
+import { requireAuth, AuthedRequest } from "../middleware/auth";
+import { applyLedgerEntry, InsufficientFundsError } from "../lib/wallet";
+
+export const walletRouter = Router();
+
+walletRouter.get("/transactions", requireAuth, async (req: AuthedRequest, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 25));
+
+  const [items, total] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { userId: req.userId! },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.transaction.count({ where: { userId: req.userId! } }),
+  ]);
+
+  res.json({ items, page, pageSize, total });
+});
+
+const faucetSchema = z.object({ amount: z.number().int().min(100).max(1_000_000) });
+
+/**
+ * Play-money faucet — lets a player top up their demo balance directly (no real payment rails here).
+ * Capped per request and rate-limited implicitly by requiring the balance to be below a threshold,
+ * so it tops up rather than becoming an infinite-money cheat.
+ */
+walletRouter.post("/faucet", requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = faucetSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.userId! } });
+  if (user.balance > 50_000) {
+    return res.status(429).json({ error: "Faucet only available below a $500 balance" });
+  }
+
+  const updated = await applyLedgerEntry(prisma, user.id, "deposit", parsed.data.amount, "faucet_topup");
+  res.json({ balance: updated.balance });
+});
+
+/** Daily rakeback: 5% of cumulative wagers since the last claim, paid as a flat bonus. */
+walletRouter.post("/rakeback/claim", requireAuth, async (req: AuthedRequest, res) => {
+  const userId = req.userId!;
+
+  const lastClaim = await prisma.rakebackClaim.findFirst({ where: { userId }, orderBy: { createdAt: "desc" } });
+  const since = lastClaim?.createdAt ?? new Date(0);
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (lastClaim && Date.now() - lastClaim.createdAt.getTime() < dayMs) {
+    const retryAfterMs = dayMs - (Date.now() - lastClaim.createdAt.getTime());
+    return res.status(429).json({ error: "Rakeback can be claimed once every 24 hours", retryAfterMs });
+  }
+
+  const wagered = await prisma.bet.aggregate({
+    where: { userId, createdAt: { gt: since } },
+    _sum: { amount: true },
+  });
+  const totalWagered = wagered._sum.amount ?? 0;
+  const rakeback = Math.floor(totalWagered * 0.05);
+
+  if (rakeback <= 0) return res.status(400).json({ error: "No eligible wagers since your last claim" });
+
+  const claim = await prisma.rakebackClaim.create({ data: { userId, amount: rakeback } });
+  const updated = await applyLedgerEntry(prisma, userId, "rakeback", rakeback, claim.id);
+
+  res.json({ claimed: rakeback, balance: updated.balance });
+});
+
+/** Top wagered / top won leaderboards over a rolling 7-day window. */
+walletRouter.get("/leaderboard", async (req, res) => {
+  const metric = req.query.metric === "profit" ? "profit" : "wagered";
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const grouped = await prisma.bet.groupBy({
+    by: ["userId"],
+    where: { createdAt: { gt: since } },
+    _sum: { amount: true, payout: true },
+    _count: { _all: true },
+  });
+
+  const ranked = grouped
+    .map((row) => ({
+      userId: row.userId,
+      wagered: row._sum.amount ?? 0,
+      won: row._sum.payout ?? 0,
+      profit: (row._sum.payout ?? 0) - (row._sum.amount ?? 0),
+      bets: row._count._all,
+    }))
+    .sort((a, b) => (metric === "profit" ? b.profit - a.profit : b.wagered - a.wagered))
+    .slice(0, 20);
+
+  const users = await prisma.user.findMany({
+    where: { id: { in: ranked.map((r) => r.userId) } },
+    select: { id: true, username: true, level: true },
+  });
+  const userMap = new Map(users.map((u) => [u.id, u]));
+
+  res.json({
+    metric,
+    windowDays: 7,
+    leaderboard: ranked.map((r, i) => ({
+      rank: i + 1,
+      username: userMap.get(r.userId)?.username ?? "unknown",
+      level: userMap.get(r.userId)?.level ?? 1,
+      ...r,
+      userId: undefined,
+    })),
+  });
+});
+
+walletRouter.use((err: unknown, _req: unknown, res: import("express").Response, next: import("express").NextFunction) => {
+  if (err instanceof InsufficientFundsError) return res.status(400).json({ error: err.message });
+  next(err);
+});
