@@ -1,4 +1,4 @@
-# 🎰 SteamPocket Casino — backend
+# 🎰 Detailed Casino — backend
 
 A provably-fair, multi-game casino backend. Eight games, one wallet, one shared
 fairness engine — built so every spin, roll, and deal can be independently
