@@ -59,3 +59,32 @@ export interface BlackjackActiveRound {
 }
 
 export const blackjackRounds = new ActiveRoundStore<BlackjackActiveRound>("blackjack");
+
+import type { Card as HiloCard } from "../games/hilo";
+
+export interface HiloActiveRound {
+  deck: HiloCard[];
+  position: number;
+  currentMultiplier: number;
+  bet: number;
+  serverSeed: string;
+  clientSeed: string;
+  nonce: number;
+  startedAt: number;
+}
+
+export const hiloRounds = new ActiveRoundStore<HiloActiveRound>("hilo");
+
+import type { Card as VPCard } from "../games/videopoker";
+
+export interface VideoPokerActiveRound {
+  deck: VPCard[];
+  hand: VPCard[];
+  bet: number;
+  serverSeed: string;
+  clientSeed: string;
+  nonce: number;
+  startedAt: number;
+}
+
+export const videoPokerRounds = new ActiveRoundStore<VideoPokerActiveRound>("videopoker");

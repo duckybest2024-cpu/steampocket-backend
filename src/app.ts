@@ -10,6 +10,8 @@ import { minesRouter } from "./routes/games/mines";
 import { blackjackRouter } from "./routes/games/blackjack";
 import { rouletteRouter } from "./routes/games/roulette";
 import { slotsRouter } from "./routes/games/slots";
+import { hiloRouter } from "./routes/games/hilo";
+import { videoPokerRouter } from "./routes/games/videopoker";
 
 export function createApp() {
   const app = express();
@@ -32,6 +34,8 @@ export function createApp() {
   app.use("/games/blackjack", blackjackRouter);
   app.use("/games/roulette", rouletteRouter);
   app.use("/games/slots", slotsRouter);
+  app.use("/games/hilo", hiloRouter);
+  app.use("/games/videopoker", videoPokerRouter);
 
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 

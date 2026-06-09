@@ -11,6 +11,11 @@ const App = (() => {
     { key: "roulette", label: "🎡 Roulette", mod: () => RouletteGame },
     { key: "blackjack", label: "🃏 Blackjack", mod: () => BlackjackGame },
     { key: "slots", label: "🎰 Slots", mod: () => SlotsGame },
+    { key: "keno", label: "🎯 Keno", mod: () => KenoGame },
+    { key: "wheel", label: "🎡 Wheel", mod: () => WheelGame },
+    { key: "baccarat", label: "🎴 Baccarat", mod: () => BaccaratGame },
+    { key: "hilo", label: "↕️ Hi-Lo", mod: () => HiloGame },
+    { key: "videopoker", label: "🃏 Video Poker", mod: () => VideoPokerGame },
   ];
 
   let activeCleanup = null;
