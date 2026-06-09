@@ -10,13 +10,14 @@ export const slotsRouter = Router();
 const spinSchema = z.object({
   lineBet: z.number().int().positive(),
   lines: z.number().int().min(MIN_LINES).max(MAX_LINES),
+  spinSalt: z.string().max(32).optional(), // client-supplied per-spin entropy that breaks sequential patterns
 });
 
 slotsRouter.post("/spin", requireAuth, async (req: AuthedRequest, res) => {
   const parsed = spinSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
-  const { lineBet, lines } = parsed.data;
+  const { lineBet, lines, spinSalt } = parsed.data;
   const validation = validateSlotsBet(lines);
   if (validation) return res.status(400).json({ error: validation });
 
@@ -24,7 +25,8 @@ slotsRouter.post("/spin", requireAuth, async (req: AuthedRequest, res) => {
 
   try {
     const placed = await placeBet(req.userId!, "slots", totalStake, (seeds) => {
-      const grid = spinGrid(seeds.serverSeed, seeds.clientSeed, seeds.nonce);
+      const effectiveClientSeed = spinSalt ? `${seeds.clientSeed}:${spinSalt}` : seeds.clientSeed;
+      const grid = spinGrid(seeds.serverSeed, effectiveClientSeed, seeds.nonce);
       const spin = evaluateSpin(grid, lines);
 
       // Total payout = (line wins, in line-bet units) * lineBet  +  (scatter win, in total-bet units).

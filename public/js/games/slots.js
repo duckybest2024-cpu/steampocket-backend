@@ -1,4 +1,15 @@
 const SlotsGame = (() => {
+  const ALL_SYMBOLS = ["wild","scatter","crown","gem","bell","clover","horseshoe","ace","king","queen"];
+
+  // Mirrors PAYLINES in src/games/slots.ts — needed client-side to highlight winning cells.
+  const PAYLINES = [
+    [1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],
+    [1,0,0,0,1],[1,2,2,2,1],[0,0,1,2,2],[2,2,1,0,0],[1,0,1,0,1],
+    [1,2,1,2,1],[0,1,1,1,0],[2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],
+    [1,1,0,1,1],[1,1,2,1,1],[0,2,0,2,0],[2,0,2,0,2],[0,2,2,2,0],
+    [2,0,0,0,2],[1,0,2,0,1],[1,2,0,2,1],[0,0,2,0,0],[2,2,0,2,2],
+  ];
+
   function render(container, accountState) {
     let busy = false;
 
@@ -27,7 +38,7 @@ const SlotsGame = (() => {
             <input type="text" id="slots-total" value="$5.00" disabled />
           </div>
           <div class="btn-row">
-            <button id="slots-spin" class="primary-btn">Spin</button>
+            <button id="slots-spin" class="primary-btn">🎰 Spin</button>
           </div>
         </div>
 
@@ -51,7 +62,7 @@ const SlotsGame = (() => {
       const cells = [];
       for (let row = 0; row < 3; row++) {
         for (let reel = 0; reel < 5; reel++) {
-          const symbol = grid ? grid[reel][row] : "queen";
+          const symbol = grid ? grid[reel][row] : ALL_SYMBOLS[Math.floor(Math.random() * ALL_SYMBOLS.length)];
           const cell = UI.el("div", { class: "reel-cell" }, UI.symbolGlyph(symbol));
           cell.dataset.reel = reel;
           cell.dataset.row = row;
@@ -59,6 +70,38 @@ const SlotsGame = (() => {
           cells.push(cell);
         }
       }
+      return cells;
+    }
+
+    function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+    async function animateReels(finalGrid) {
+      // Start all cells spinning with random symbols
+      const cells = buildGrid(null);
+      let spinHandle = setInterval(() => {
+        for (const cell of cells) {
+          if (!cell.dataset.stopped) {
+            cell.textContent = UI.symbolGlyph(ALL_SYMBOLS[Math.floor(Math.random() * ALL_SYMBOLS.length)]);
+            cell.classList.add("spinning");
+          }
+        }
+      }, 80);
+
+      // Stop each reel left-to-right with a stagger
+      for (let reel = 0; reel < 5; reel++) {
+        await sleep(220);
+        for (let row = 0; row < 3; row++) {
+          const cell = cells.find((c) => Number(c.dataset.reel) === reel && Number(c.dataset.row) === row);
+          if (!cell) continue;
+          cell.dataset.stopped = "1";
+          cell.classList.remove("spinning");
+          cell.classList.add("landing");
+          cell.textContent = UI.symbolGlyph(finalGrid[reel][row]);
+          setTimeout(() => cell.classList.remove("landing"), 200);
+        }
+      }
+
+      clearInterval(spinHandle);
       return cells;
     }
 
@@ -80,15 +123,17 @@ const SlotsGame = (() => {
       els.spin.disabled = true;
       els.result.className = "result-banner";
 
+      // Generate a fresh random salt every spin — breaks any sequential pattern in the seed.
+      const spinSalt = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
       try {
-        const res = await Api.post("/games/slots/spin", { lineBet, lines });
+        const res = await Api.post("/games/slots/spin", { lineBet, lines, spinSalt });
         const { grid, lineWins, scatterCount, scatterPayout, freeSpinsAwarded } = res.result.state;
 
-        const cells = buildGrid(grid);
-        cells.forEach((c) => c.classList.add("spin-shake"));
-        setTimeout(() => cells.forEach((c) => c.classList.remove("spin-shake")), 500);
+        // Animate reels spinning and landing
+        const cells = await animateReels(grid);
 
-        // Highlight every cell that's part of a winning payline.
+        // Highlight every cell that's part of a winning payline
         for (const win of lineWins) {
           const positions = PAYLINES[win.line];
           for (let reel = 0; reel < win.count; reel++) {
@@ -121,15 +166,6 @@ const SlotsGame = (() => {
         els.spin.disabled = false;
       }
     });
-
-    // Mirrors PAYLINES in src/games/slots.ts — needed client-side to highlight winning cells.
-    const PAYLINES = [
-      [1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2],
-      [1,0,0,0,1],[1,2,2,2,1],[0,0,1,2,2],[2,2,1,0,0],[1,0,1,0,1],
-      [1,2,1,2,1],[0,1,1,1,0],[2,1,1,1,2],[0,1,0,1,0],[2,1,2,1,2],
-      [1,1,0,1,1],[1,1,2,1,1],[0,2,0,2,0],[2,0,2,0,2],[0,2,2,2,0],
-      [2,0,0,0,2],[1,0,2,0,1],[1,2,0,2,1],[0,0,2,0,0],[2,2,0,2,2],
-    ];
 
     buildGrid(null);
     refreshTotal();

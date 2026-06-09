@@ -100,12 +100,26 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .brand { font-weight: 800; font-size: 1.1rem; white-space: nowrap; }
 
-.game-nav { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.game-nav {
+  display: flex; gap: 6px; flex-wrap: nowrap; flex: 1;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0;
+  scrollbar-width: none;
+}
+.game-nav::-webkit-scrollbar { display: none; }
+
+@media (max-width: 700px) {
+  .topbar { flex-wrap: wrap; padding: 10px 16px; gap: 8px; }
+  .brand { flex: 1; font-size: 1rem; }
+  .account { gap: 8px; }
+  .account .balance, .account .level { min-width: 70px; }
+  .game-nav { order: 3; width: 100%; flex: none; padding-bottom: 2px; }
+  .ghost-btn { padding: 7px 10px; font-size: 0.8rem; }
+}
 .game-nav button {
   background: var(--bg-elev);
   border: 1px solid var(--border);
@@ -340,10 +354,17 @@ body {
   transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 .reel-cell.win-cell { box-shadow: 0 0 0 2px var(--gold); background: rgba(251, 191, 36, 0.15); transform: scale(1.05); }
-.spin-shake { animation: spin-shake 0.5s ease; }
-@keyframes spin-shake {
-  0% { transform: translateY(-12px); opacity: 0.4; }
-  100% { transform: translateY(0); opacity: 1; }
+.reel-cell.spinning { animation: reel-spin 0.08s steps(1) infinite; opacity: 0.85; }
+.reel-cell.landing { animation: reel-land 0.18s ease-out; }
+@keyframes reel-spin {
+  0%   { transform: translateY(-6px); }
+  50%  { transform: translateY(6px); }
+  100% { transform: translateY(0); }
+}
+@keyframes reel-land {
+  0%   { transform: translateY(-14px) scale(1.08); }
+  60%  { transform: translateY(4px) scale(0.97); }
+  100% { transform: translateY(0) scale(1); }
 }
 
 /* ---------------------------------------------------------------- Crash */
