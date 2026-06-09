@@ -77,6 +77,7 @@ export function publicUser(user: {
   username: string;
   email: string;
   balance: number;
+  bank: number;
   level: number;
   xp: number;
   createdAt: Date;
@@ -89,6 +90,7 @@ export function publicUser(user: {
     username: user.username,
     email: user.email,
     balance: user.balance,
+    bank: user.bank,
     level: user.level,
     xp: user.xp,
     createdAt: user.createdAt,

@@ -1,6 +1,6 @@
 /* App shell: auth flow, navigation between games, shared account state. */
 const App = (() => {
-  const state = { id: null, username: null, balance: 0, level: 1, xp: 0, fairness: null };
+  const state = { id: null, username: null, balance: 0, bank: 0, level: 1, xp: 0, fairness: null };
 
   const GAMES = [
     { key: "crash", label: "🚀 Crash", mod: () => CrashGame },
@@ -16,6 +16,7 @@ const App = (() => {
     { key: "baccarat", label: "🎴 Baccarat", mod: () => BaccaratGame },
     { key: "hilo", label: "↕️ Hi-Lo", mod: () => HiloGame },
     { key: "videopoker", label: "🃏 Video Poker", mod: () => VideoPokerGame },
+    { key: "chipshop", label: "🏦 Chips", mod: () => ChipShopGame },
   ];
 
   let activeCleanup = null;
@@ -61,6 +62,7 @@ const App = (() => {
     state.id = user.id;
     state.username = user.username;
     state.balance = user.balance;
+    state.bank = user.bank ?? 0;
     state.level = user.level;
     state.xp = user.xp;
     state.fairness = user.fairness;
@@ -137,17 +139,6 @@ const App = (() => {
       activeCleanup = null;
       activeKey = null;
       showScreen("auth");
-    });
-
-    document.getElementById("faucet-btn").addEventListener("click", async () => {
-      try {
-        const { balance } = await Api.faucet(50000);
-        state.balance = balance;
-        UI.setBalance(balance);
-        UI.toast("Faucet topped you up by $500.", "win");
-      } catch (err) {
-        UI.toast(err.message, "loss");
-      }
     });
   }
 

@@ -43,6 +43,57 @@ walletRouter.post("/faucet", requireAuth, async (req: AuthedRequest, res) => {
   res.json({ balance: updated.balance });
 });
 
+// ---------------------------------------------------------------------------
+// Chip system: cash out chips to bank, buy chips from bank
+// ---------------------------------------------------------------------------
+
+const buyChipsSchema = z.object({ amount: z.number().int().min(100) });
+
+walletRouter.post("/buy-chips", requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = buyChipsSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const userId = req.userId!;
+  const { amount } = parsed.data;
+
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  if (user.bank < amount) return res.status(400).json({ error: "Not enough chips in your bank" });
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const u = await tx.user.update({
+      where: { id: userId },
+      data: { bank: { decrement: amount }, balance: { increment: amount } },
+    });
+    await tx.transaction.create({
+      data: { userId, type: "deposit", amount, balance: u.balance, reference: "buy_chips" },
+    });
+    return u;
+  });
+
+  res.json({ balance: updated.balance, bank: updated.bank });
+});
+
+walletRouter.post("/cashout-chips", requireAuth, async (req: AuthedRequest, res) => {
+  const userId = req.userId!;
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+  if (user.balance <= 0) return res.status(400).json({ error: "No chips to cash out" });
+
+  const amount = user.balance;
+  const updated = await prisma.$transaction(async (tx) => {
+    const u = await tx.user.update({
+      where: { id: userId },
+      data: { balance: 0, bank: { increment: amount } },
+    });
+    await tx.transaction.create({
+      data: { userId, type: "withdrawal", amount: -amount, balance: 0, reference: "cashout_chips" },
+    });
+    return u;
+  });
+
+  res.json({ balance: updated.balance, bank: updated.bank, cashedOut: amount });
+});
+
 /** Daily rakeback: 5% of cumulative wagers since the last claim, paid as a flat bonus. */
 walletRouter.post("/rakeback/claim", requireAuth, async (req: AuthedRequest, res) => {
   const userId = req.userId!;

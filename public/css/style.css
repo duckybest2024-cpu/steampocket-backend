@@ -140,7 +140,7 @@ body {
 .account { display: flex; align-items: center; gap: 14px; }
 .balance, .level { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 90px; }
 .label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
-.amount { font-size: 1.15rem; font-weight: 800; color: var(--win); }
+.amount { font-size: 1.15rem; font-weight: 800; color: var(--gold); }
 .xp-bar { width: 90px; height: 6px; border-radius: 3px; background: var(--bg-elev); overflow: hidden; }
 .xp-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--accent-2)); width: 0%; transition: width 0.4s ease; }
 
@@ -337,12 +337,23 @@ body {
   box-shadow: 0 0 14px var(--gold);
   transition: left 0.32s ease, top 0.32s ease;
 }
-.plinko-slots { display: grid; gap: 4px; }
+.plinko-slots-wrap { overflow: hidden; }
+.plinko-slots { display: grid; gap: 0; }
 .plinko-slot {
-  text-align: center; padding: 8px 2px; border-radius: 6px; font-size: 0.75rem; font-weight: 800;
+  text-align: center; padding: 7px 1px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;
   background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-dim);
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  background: color-mix(in srgb, var(--slot-color, var(--bg-elev)) 18%, var(--bg-elev));
+  color: var(--slot-color, var(--text-dim));
+  border-color: color-mix(in srgb, var(--slot-color, var(--border)) 40%, transparent);
 }
-.plinko-slot.landed { background: var(--gold); color: #2c1c00; border-color: var(--gold); }
+.plinko-slot.landed {
+  background: var(--slot-color, var(--gold));
+  color: #1a1226;
+  border-color: var(--slot-color, var(--gold));
+  transform: scaleY(1.15);
+  box-shadow: 0 0 12px var(--slot-color, var(--gold));
+}
 
 /* ---------------------------------------------------------------- Slots */
 
@@ -542,3 +553,51 @@ body {
 }
 .vpt-row:last-child { border-bottom: none; }
 .vpt-row span:last-child { color: var(--gold); font-weight: 700; }
+
+/* ---------------------------------------------------------------- Chip Shop / Cash Out */
+
+.chip-balances {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;
+}
+@media (max-width: 500px) { .chip-balances { grid-template-columns: 1fr; } }
+
+.chip-bal-card {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px; display: flex; flex-direction: column; gap: 6px; text-align: center;
+}
+.chip-bal-card.playing { border-color: var(--gold); background: rgba(251,191,36,0.07); }
+.chip-bal-card.bank    { border-color: var(--accent); background: rgba(111,92,242,0.07); }
+.cbc-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-dim); }
+.cbc-amount { font-size: 1.8rem; font-weight: 900; color: var(--gold); }
+.chip-bal-card.bank .cbc-amount { color: var(--accent-2); }
+.cbc-hint { font-size: 0.75rem; color: var(--text-dim); }
+
+.chip-section {
+  background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px;
+  padding: 18px; margin-bottom: 14px;
+}
+.chip-section h3 { margin: 0 0 6px; font-size: 1rem; }
+.chip-section-hint { margin: 0 0 14px; font-size: 0.83rem; color: var(--text-dim); }
+.chip-empty-hint { color: var(--text-dim); font-size: 0.83rem; font-style: italic; margin: 0; }
+
+.cashout-section { border-color: rgba(248,113,113,0.4); }
+.cashout-preview { background: var(--bg-card); border-radius: 8px; padding: 12px 14px; margin-bottom: 4px; }
+.cashout-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+.cashout-row:last-child { border-bottom: none; }
+.cashout-row.total { font-weight: 700; }
+.co-chips { font-weight: 700; }
+.co-green { color: var(--win); }
+
+.buy-packages {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px;
+}
+.chip-pkg {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 8px;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.chip-pkg:hover:not(.disabled) { border-color: var(--gold); background: rgba(251,191,36,0.08); }
+.chip-pkg.disabled { opacity: 0.4; cursor: not-allowed; }
+.pkg-emoji { font-size: 1.6rem; }
+.pkg-label { font-weight: 700; font-size: 0.82rem; }
+.pkg-desc { font-size: 0.75rem; color: var(--gold); }
