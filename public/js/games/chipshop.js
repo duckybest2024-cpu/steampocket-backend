@@ -1,10 +1,14 @@
 const ChipShopGame = (() => {
   const PACKAGES = [
-    { chips: 100,   label: "Starter Pack",   desc: "100 chips",   emoji: "🟡" },
-    { chips: 500,   label: "Regular Pack",   desc: "500 chips",   emoji: "🔴" },
-    { chips: 1000,  label: "Pro Pack",        desc: "1,000 chips", emoji: "💜" },
-    { chips: 5000,  label: "High Roller",     desc: "5,000 chips", emoji: "⚫" },
+    { id: "starter",    chips: 100,   priceCents: 100,  name: "Starter Pack",  emoji: "🟡", badge: "Intro",      saving: null },
+    { id: "regular",    chips: 500,   priceCents: 400,  name: "Regular Pack",  emoji: "🔴", badge: "20% off",    saving: "save $1" },
+    { id: "pro",        chips: 1000,  priceCents: 700,  name: "Pro Pack",      emoji: "💜", badge: "30% off",    saving: "save $3" },
+    { id: "highroller", chips: 5000,  priceCents: 3000, name: "High Roller",   emoji: "⚫", badge: "Best value", saving: "save $20" },
   ];
+
+  function usd(cents) {
+    return `$${(cents / 100).toFixed(2)}`;
+  }
 
   function render(container, accountState) {
     function rebuild() {
@@ -15,71 +19,83 @@ const ChipShopGame = (() => {
         <div class="game-panel">
           <div class="game-header">
             <h2>🏦 Chip Cage</h2>
-            <p>Exchange between your bank and playing chips. All amounts shown in chips (1 chip = $1).</p>
+            <p>Buy chips with a card (test mode — use card <code>4242 4242 4242 4242</code>), or move chips between your bank and table.</p>
           </div>
 
           <div class="chip-balances">
             <div class="chip-bal-card playing">
               <div class="cbc-label">Playing Chips</div>
               <div class="cbc-amount">${gameChips.toLocaleString()} 🪙</div>
-              <div class="cbc-hint">In your pocket — bet these</div>
+              <div class="cbc-hint">On the table</div>
             </div>
             <div class="chip-bal-card bank">
               <div class="cbc-label">Bank</div>
               <div class="cbc-amount">${bankChips.toLocaleString()} 🏦</div>
-              <div class="cbc-hint">Safe from the tables</div>
+              <div class="cbc-hint">Safe from losses</div>
             </div>
           </div>
 
-          <!-- Buy chips from bank -->
-          <div class="chip-section">
-            <h3>Buy Chips from Bank</h3>
-            <p class="chip-section-hint">Move chips from your bank to the table to play games.</p>
-            ${bankChips === 0 ? `<p class="chip-empty-hint">Your bank is empty. Cash out winnings first, or use the faucet to get chips directly.</p>` : `
-              <div class="buy-packages">
-                ${PACKAGES.map(p => `
-                  <button class="chip-pkg ${p.chips > bankChips ? "disabled" : ""}" data-chips="${p.chips}" ${p.chips > bankChips ? "disabled" : ""}>
+          <!-- Stripe card purchase -->
+          <div class="chip-section stripe-section">
+            <div class="stripe-header">
+              <h3>💳 Buy Chips with Card</h3>
+              <span class="stripe-badge">TEST MODE</span>
+            </div>
+            <p class="chip-section-hint">
+              Use test card <code class="test-card">4242 4242 4242 4242</code> · any future date · any CVC.
+              Chips are added instantly after payment.
+            </p>
+            <div class="buy-packages">
+              ${PACKAGES.map(p => `
+                <div class="chip-pkg" data-id="${p.id}">
+                  <div class="pkg-top">
                     <span class="pkg-emoji">${p.emoji}</span>
-                    <span class="pkg-label">${p.label}</span>
-                    <span class="pkg-desc">${p.desc}</span>
-                  </button>
-                `).join("")}
-              </div>
-              <div class="controls-row" style="margin-top:12px">
-                <div class="field">
-                  <label>Custom amount (chips)</label>
-                  <input type="number" id="buy-custom" min="1" max="${bankChips}" value="${Math.min(bankChips, 100)}" />
+                    ${p.saving ? `<span class="pkg-saving">${p.saving}</span>` : ""}
+                  </div>
+                  <div class="pkg-name">${p.name}</div>
+                  <div class="pkg-chips">${p.chips.toLocaleString()} 🪙</div>
+                  <div class="pkg-price">${usd(p.priceCents)}</div>
+                  <button class="stripe-buy-btn" data-id="${p.id}">Buy now</button>
                 </div>
-                <div class="btn-row" style="align-items:flex-end">
-                  <button id="buy-custom-btn" class="primary-btn">Buy Chips</button>
-                </div>
-              </div>
-            `}
+              `).join("")}
+            </div>
           </div>
 
-          <!-- Cash out playing chips -->
+          <!-- Cash out to bank -->
           <div class="chip-section cashout-section">
-            <h3>Cash Out to Bank</h3>
-            <p class="chip-section-hint">Move your playing chips safely to the bank. You can buy them back any time.</p>
-            ${gameChips === 0 ? `<p class="chip-empty-hint">No chips to cash out right now.</p>` : `
+            <h3>💰 Cash Out to Bank</h3>
+            <p class="chip-section-hint">Lock your chips in the bank — safe from bets. Buy them back any time.</p>
+            ${gameChips === 0 ? `<p class="chip-empty-hint">No chips on the table to cash out.</p>` : `
               <div class="cashout-preview">
-                <div class="cashout-row">
-                  <span>Playing chips</span><span class="co-chips">${gameChips.toLocaleString()} 🪙</span>
-                </div>
-                <div class="cashout-row total">
-                  <span>Will be moved to bank</span><span class="co-chips co-green">${gameChips.toLocaleString()} 🏦</span>
-                </div>
+                <div class="cashout-row"><span>Playing chips</span><span>${gameChips.toLocaleString()} 🪙</span></div>
+                <div class="cashout-row total"><span>Moves to bank</span><span class="co-green">${gameChips.toLocaleString()} 🏦</span></div>
               </div>
-              <div class="btn-row" style="margin-top:14px">
-                <button id="cashout-btn" class="danger-btn">💰 Cash Out All Chips</button>
+              <div class="btn-row" style="margin-top:12px">
+                <button id="cashout-btn" class="danger-btn">Cash Out All</button>
               </div>
             `}
           </div>
 
-          <!-- Faucet -->
+          <!-- Buy from bank -->
+          ${bankChips > 0 ? `
+          <div class="chip-section">
+            <h3>🏦 Move from Bank to Table</h3>
+            <p class="chip-section-hint">You have ${bankChips.toLocaleString()} chips in the bank.</p>
+            <div class="controls-row">
+              <div class="field">
+                <label>Amount (chips)</label>
+                <input type="number" id="buy-from-bank" min="1" max="${bankChips}" value="${Math.min(bankChips, 100)}" />
+              </div>
+              <div class="btn-row" style="align-items:flex-end">
+                <button id="bank-to-table-btn" class="primary-btn">Move to Table</button>
+              </div>
+            </div>
+          </div>` : ""}
+
+          <!-- Free chips faucet -->
           <div class="chip-section">
             <h3>🚰 Free Chips</h3>
-            <p class="chip-section-hint">Top up your playing chips for free (available when below 500 chips).</p>
+            <p class="chip-section-hint">Get 500 free chips if your playing balance drops below 500.</p>
             <div class="btn-row">
               <button id="faucet-shop-btn" class="secondary-btn" ${gameChips >= 500 ? "disabled" : ""}>
                 Get 500 Free Chips
@@ -89,19 +105,22 @@ const ChipShopGame = (() => {
         </div>
       `;
 
-      // Buy package buttons
-      container.querySelectorAll(".chip-pkg:not(.disabled)").forEach((btn) => {
-        btn.addEventListener("click", async () => doBuyChips(Number(btn.dataset.chips)));
-      });
-
-      // Custom buy
-      const customBtn = container.querySelector("#buy-custom-btn");
-      if (customBtn) {
-        customBtn.addEventListener("click", async () => {
-          const amt = Math.round(Number(container.querySelector("#buy-custom").value));
-          if (amt > 0) doBuyChips(amt);
+      // Stripe buy buttons
+      container.querySelectorAll(".stripe-buy-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const pkgId = btn.dataset.id;
+          btn.disabled = true;
+          btn.textContent = "Loading…";
+          try {
+            const { url } = await Api.post("/wallet/create-checkout-session", { packageId: pkgId });
+            window.location.href = url;
+          } catch (err) {
+            UI.toast(err.message || "Payment unavailable — add STRIPE_SECRET_KEY to env", "loss");
+            btn.disabled = false;
+            btn.textContent = "Buy now";
+          }
         });
-      }
+      });
 
       // Cash out
       const cashoutBtn = container.querySelector("#cashout-btn");
@@ -113,11 +132,32 @@ const ChipShopGame = (() => {
             accountState.balance = res.balance;
             accountState.bank = res.bank;
             UI.setBalance(res.balance);
-            UI.toast(`Cashed out ${UI.money(res.cashedOut)} to bank!`, "win");
+            UI.toast(`${Math.floor(res.cashedOut / 100)} chips moved to bank!`, "win");
             rebuild();
           } catch (err) {
             UI.toast(err.message, "loss");
             cashoutBtn.disabled = false;
+          }
+        });
+      }
+
+      // Bank → table
+      const b2tBtn = container.querySelector("#bank-to-table-btn");
+      if (b2tBtn) {
+        b2tBtn.addEventListener("click", async () => {
+          const chips = Math.round(Number(container.querySelector("#buy-from-bank").value));
+          if (!chips || chips <= 0) return;
+          b2tBtn.disabled = true;
+          try {
+            const res = await Api.post("/wallet/buy-chips", { amount: chips * 100 });
+            accountState.balance = res.balance;
+            accountState.bank = res.bank;
+            UI.setBalance(res.balance);
+            UI.toast(`${chips} chips moved to table!`, "win");
+            rebuild();
+          } catch (err) {
+            UI.toast(err.message, "loss");
+            b2tBtn.disabled = false;
           }
         });
       }
@@ -138,20 +178,6 @@ const ChipShopGame = (() => {
             faucetBtn.disabled = false;
           }
         });
-      }
-    }
-
-    async function doBuyChips(chips) {
-      const amount = chips * 100; // chips → cents
-      try {
-        const res = await Api.post("/wallet/buy-chips", { amount });
-        accountState.balance = res.balance;
-        accountState.bank = res.bank;
-        UI.setBalance(res.balance);
-        UI.toast(`Bought ${chips} chips from bank!`, "win");
-        rebuild();
-      } catch (err) {
-        UI.toast(err.message, "loss");
       }
     }
 

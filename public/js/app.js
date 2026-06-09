@@ -75,7 +75,22 @@ const App = (() => {
     showScreen("app");
     buildNav();
     await refreshAccount();
-    mount("crash");
+
+    // Handle redirect back from Stripe Checkout
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      history.replaceState({}, "", "/");
+      // Balance was updated by webhook; refresh to show new chips
+      await refreshAccount();
+      UI.toast("💳 Payment received! Chips added to your account.", "win");
+      mount("chipshop");
+    } else if (params.get("checkout") === "cancel") {
+      history.replaceState({}, "", "/");
+      UI.toast("Payment cancelled.", "info");
+      mount("chipshop");
+    } else {
+      mount("crash");
+    }
   }
 
   function wireAuthForms() {
