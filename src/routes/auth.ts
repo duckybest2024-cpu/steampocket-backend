@@ -20,30 +20,35 @@ authRouter.post("/register", async (req, res) => {
 
   const { username, email, password } = parsed.data;
 
-  const existing = await prisma.user.findFirst({ where: { OR: [{ username }, { email }] } });
-  if (existing) return res.status(409).json({ error: "Username or email already taken" });
+  try {
+    const existing = await prisma.user.findFirst({ where: { OR: [{ username }, { email }] } });
+    if (existing) return res.status(409).json({ error: "Username or email already taken" });
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  const seedPair = createSeedPair();
+    const passwordHash = await bcrypt.hash(password, 10);
+    const seedPair = createSeedPair();
 
-  const user = await prisma.user.create({
-    data: {
-      username,
-      email,
-      passwordHash,
-      balance: config.startingBalance,
-      serverSeed: seedPair.serverSeed,
-      serverSeedHash: seedPair.serverSeedHash,
-      clientSeed: seedPair.clientSeed,
-    },
-  });
+    const user = await prisma.user.create({
+      data: {
+        username,
+        email,
+        passwordHash,
+        balance: config.startingBalance,
+        serverSeed: seedPair.serverSeed,
+        serverSeedHash: seedPair.serverSeedHash,
+        clientSeed: seedPair.clientSeed,
+      },
+    });
 
-  await prisma.transaction.create({
-    data: { userId: user.id, type: "bonus", amount: config.startingBalance, balance: config.startingBalance, reference: "welcome_bonus" },
-  });
+    await prisma.transaction.create({
+      data: { userId: user.id, type: "bonus", amount: config.startingBalance, balance: config.startingBalance, reference: "welcome_bonus" },
+    });
 
-  const token = signToken(user.id);
-  res.status(201).json({ token, user: publicUser(user) });
+    const token = signToken(user.id);
+    res.status(201).json({ token, user: publicUser(user) });
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ error: "Registration failed — please try again" });
+  }
 });
 
 const loginSchema = z.object({
@@ -56,20 +61,30 @@ authRouter.post("/login", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: "Username/email and password are required" });
 
   const { identifier, password } = parsed.data;
-  const user = await prisma.user.findFirst({ where: { OR: [{ username: identifier }, { email: identifier }] } });
-  if (!user) return res.status(401).json({ error: "Invalid credentials" });
+  try {
+    const user = await prisma.user.findFirst({ where: { OR: [{ username: identifier }, { email: identifier }] } });
+    if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(401).json({ error: "Invalid credentials" });
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
-  const token = signToken(user.id);
-  res.json({ token, user: publicUser(user) });
+    const token = signToken(user.id);
+    res.json({ token, user: publicUser(user) });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Login failed — please try again" });
+  }
 });
 
 authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.userId } });
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json({ user: publicUser(user) });
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ user: publicUser(user) });
+  } catch (err) {
+    console.error("Me error:", err);
+    res.status(500).json({ error: "Failed to load account" });
+  }
 });
 
 export function publicUser(user: {
