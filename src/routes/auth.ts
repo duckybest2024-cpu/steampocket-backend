@@ -45,7 +45,11 @@ authRouter.post("/register", async (req, res) => {
 
     const token = signToken(user.id);
     res.status(201).json({ token, user: publicUser(user) });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      const field = err?.meta?.target?.includes("email") ? "email" : "username";
+      return res.status(409).json({ error: `That ${field} is already taken` });
+    }
     console.error("Register error:", err);
     res.status(500).json({ error: "Registration failed — please try again" });
   }
