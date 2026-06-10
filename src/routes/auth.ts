@@ -94,6 +94,8 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
 export function publicUser(user: {
   id: string;
   username: string;
+  nickname: string | null;
+  rank: string;
   email: string;
   balance: number;
   bank: number;
@@ -107,6 +109,8 @@ export function publicUser(user: {
   return {
     id: user.id,
     username: user.username,
+    nickname: user.nickname,
+    rank: user.rank,
     email: user.email,
     balance: user.balance,
     bank: user.bank,

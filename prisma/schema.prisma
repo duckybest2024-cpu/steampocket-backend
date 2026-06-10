@@ -25,6 +25,8 @@ model User {
   nonce         Int      @default(0)
 
   isBanned      Boolean  @default(false)
+  nickname      String?
+  rank          String   @default("bronze")
 
   bets              Bet[]
   transactions      Transaction[]
@@ -128,4 +130,20 @@ model CrashRound {
   state        String   // betting | running | crashed
   startedAt    DateTime @default(now())
   endedAt      DateTime?
+}
+
+model HouseBank {
+  id        String   @id
+  chips     Int      @default(1000000000)
+  dollars   Int      @default(1000000000)
+  updatedAt DateTime @updatedAt
+}
+
+model HouseBankTransaction {
+  id            String   @id @default(cuid())
+  type          String
+  chipsChange   Int      @default(0)
+  dollarsChange Int      @default(0)
+  note          String?
+  createdAt     DateTime @default(now())
 }

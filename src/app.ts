@@ -16,6 +16,7 @@ import { stripeWebhookHandler } from "./routes/stripeWebhook";
 import { leaderboardRouter } from "./routes/leaderboard";
 import { friendsRouter } from "./routes/friends";
 import { adminRouter } from "./routes/admin";
+import { settingsRouter } from "./routes/settings";
 
 export function createApp() {
   const app = express();
@@ -33,6 +34,7 @@ export function createApp() {
   app.use(express.static(path.join(__dirname, "..", "public")));
 
   app.use("/auth", authRouter);
+  app.use("/settings", settingsRouter);
   app.use("/fairness", fairnessRouter);
   app.use("/wallet", walletRouter);
   app.use("/bets", betsRouter);

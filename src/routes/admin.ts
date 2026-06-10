@@ -183,3 +183,95 @@ adminRouter.delete("/users/:userId", async (req, res) => {
     res.status(500).json({ error: "Failed to delete user" });
   }
 });
+
+// ---------------------------------------------------------------------------
+// GET /bank — house bank balance + P&L
+// ---------------------------------------------------------------------------
+adminRouter.get("/bank", async (_req, res) => {
+  try {
+    const bank = await prisma.houseBank.upsert({
+      where: { id: "singleton" },
+      create: { id: "singleton", chips: 1000000000, dollars: 1000000000 },
+      update: {},
+    });
+
+    const betAgg = await prisma.bet.aggregate({ _sum: { amount: true, payout: true } });
+    const totalWagered = betAgg._sum.amount ?? 0;
+    const totalPaidOut = betAgg._sum.payout ?? 0;
+    const houseIncome = totalWagered - totalPaidOut;
+
+    const transactions = await prisma.houseBankTransaction.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    res.json({ chips: bank.chips, dollars: bank.dollars, houseIncome, totalWagered, totalPaidOut, transactions });
+  } catch (err) {
+    console.error("GET /admin/bank error:", err);
+    res.status(500).json({ error: "Failed to load bank" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /bank/adjust — add/remove chips or dollars from house bank
+// ---------------------------------------------------------------------------
+const bankAdjustSchema = z.object({
+  type: z.enum(["chips", "dollars"]),
+  amount: z.number().int(),
+  note: z.string().min(1),
+});
+
+adminRouter.post("/bank/adjust", async (req, res) => {
+  const parsed = bankAdjustSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const { type, amount, note } = parsed.data;
+
+  try {
+    const updateData = type === "chips" ? { chips: { increment: amount } } : { dollars: { increment: amount } };
+    const bank = await prisma.houseBank.upsert({
+      where: { id: "singleton" },
+      create: { id: "singleton", chips: type === "chips" ? 1000000000 + amount : 1000000000, dollars: type === "dollars" ? 1000000000 + amount : 1000000000 },
+      update: updateData,
+    });
+
+    await prisma.houseBankTransaction.create({
+      data: {
+        type: amount >= 0 ? `${type}_add` : `${type}_remove`,
+        chipsChange: type === "chips" ? amount : 0,
+        dollarsChange: type === "dollars" ? amount : 0,
+        note,
+      },
+    });
+
+    res.json({ chips: bank.chips, dollars: bank.dollars });
+  } catch (err) {
+    console.error("POST /admin/bank/adjust error:", err);
+    res.status(500).json({ error: "Failed to adjust bank" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// PATCH /users/:userId/rank — set a user's rank
+// ---------------------------------------------------------------------------
+const rankSchema = z.object({
+  rank: z.enum(["bronze", "silver", "gold", "platinum", "diamond"]),
+});
+
+adminRouter.patch("/users/:userId/rank", async (req, res) => {
+  const parsed = rankSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const { userId } = req.params;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.username === "Ditol21") return res.status(400).json({ error: "Cannot change owner rank" });
+
+    const updated = await prisma.user.update({ where: { id: userId }, data: { rank: parsed.data.rank } });
+    res.json({ rank: updated.rank });
+  } catch (err) {
+    console.error("PATCH /admin/users/:userId/rank error:", err);
+    res.status(500).json({ error: "Failed to update rank" });
+  }
+});
