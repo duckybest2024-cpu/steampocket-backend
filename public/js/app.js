@@ -1,6 +1,6 @@
 /* App shell: auth flow, navigation between games, shared account state. */
 const App = (() => {
-  const state = { id: null, username: null, balance: 0, bank: 0, level: 1, xp: 0, fairness: null };
+  const state = { id: null, username: null, nickname: null, rank: "bronze", balance: 0, bank: 0, level: 1, xp: 0, fairness: null };
 
   const GAMES = [
     { key: "crash", label: "🚀 Crash", mod: () => CrashGame },
@@ -19,6 +19,7 @@ const App = (() => {
     { key: "chipshop", label: "🏦 Chips", mod: () => ChipShopGame },
     { key: "leaderboard", label: "🏆 Leaderboard", mod: () => LeaderboardGame },
     { key: "friends", label: "👥 Friends", mod: () => FriendsGame },
+    { key: "settings", label: "⚙️ Settings", mod: () => SettingsGame },
   ];
 
   let activeCleanup = null;
@@ -58,7 +59,9 @@ const App = (() => {
     const container = document.getElementById("game-area");
     container.innerHTML = "";
 
-    const game = GAMES.find((g) => g.key === key);
+    const allEntries = [...GAMES, { key: "admin", label: "⚙️ Admin", mod: () => AdminGame }];
+    const game = allEntries.find((g) => g.key === key);
+    if (!game) return;
     const mod = game.mod();
     activeCleanup = mod.render(container, state) || null;
   }
@@ -67,6 +70,8 @@ const App = (() => {
     const { user } = await Api.me();
     state.id = user.id;
     state.username = user.username;
+    state.nickname = user.nickname ?? null;
+    state.rank = user.rank ?? "bronze";
     state.balance = user.balance;
     state.bank = user.bank ?? 0;
     state.level = user.level;

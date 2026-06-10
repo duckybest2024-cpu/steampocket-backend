@@ -38,12 +38,14 @@ const Api = (() => {
 
   const get = (path) => request("GET", path);
   const post = (path, body) => request("POST", path, body);
+  const patch = (path, body) => request("PATCH", path, body);
 
   return {
     setToken,
     getToken,
     get,
     post,
+    patch,
     // Convenience wrappers used throughout the app:
     register: (payload) => post("/auth/register", payload),
     login: (payload) => post("/auth/login", payload),
