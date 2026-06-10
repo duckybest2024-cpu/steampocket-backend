@@ -25,7 +25,7 @@ adminRouter.use(adminOnly);
 // ---------------------------------------------------------------------------
 // GET /admin/stats
 // ---------------------------------------------------------------------------
-adminRouter.get("/admin/stats", async (_req, res) => {
+adminRouter.get("/stats", async (_req, res) => {
   try {
     const [totalUsers, totalBets, betAgg, activeRoundsCount] = await Promise.all([
       prisma.user.count(),
@@ -49,7 +49,7 @@ adminRouter.get("/admin/stats", async (_req, res) => {
 // ---------------------------------------------------------------------------
 // GET /admin/users — paginated user list with optional search
 // ---------------------------------------------------------------------------
-adminRouter.get("/admin/users", async (req, res) => {
+adminRouter.get("/users", async (req, res) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
@@ -94,7 +94,7 @@ adminRouter.get("/admin/users", async (req, res) => {
 // ---------------------------------------------------------------------------
 // POST /admin/ban/:userId — toggle ban
 // ---------------------------------------------------------------------------
-adminRouter.post("/admin/ban/:userId", async (req, res) => {
+adminRouter.post("/ban/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -120,7 +120,7 @@ const adjustSchema = z.object({
   note: z.string().min(1),
 });
 
-adminRouter.post("/admin/adjust-balance/:userId", async (req, res) => {
+adminRouter.post("/adjust-balance/:userId", async (req, res) => {
   const parsed = adjustSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -158,7 +158,7 @@ adminRouter.post("/admin/adjust-balance/:userId", async (req, res) => {
 // ---------------------------------------------------------------------------
 // DELETE /admin/users/:userId — hard delete user and all data
 // ---------------------------------------------------------------------------
-adminRouter.delete("/admin/users/:userId", async (req, res) => {
+adminRouter.delete("/users/:userId", async (req, res) => {
   const { userId } = req.params;
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });

@@ -5,7 +5,7 @@ import { requireAuth, AuthedRequest } from "../middleware/auth";
 export const leaderboardRouter = Router();
 
 // GET /leaderboard — public, top 50 players by balance + bank DESC
-leaderboardRouter.get("/leaderboard", async (_req, res) => {
+leaderboardRouter.get("/", async (_req, res) => {
   try {
     const users = await prisma.user.findMany({
       where: { isBanned: false },
@@ -39,7 +39,7 @@ leaderboardRouter.get("/leaderboard", async (_req, res) => {
 });
 
 // GET /leaderboard/me — authed, returns caller's rank
-leaderboardRouter.get("/leaderboard/me", requireAuth, async (req: AuthedRequest, res) => {
+leaderboardRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const allUsers = await prisma.user.findMany({
       where: { isBanned: false },

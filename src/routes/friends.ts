@@ -9,7 +9,7 @@ export const friendsRouter = Router();
 friendsRouter.use(requireAuth);
 
 // GET /friends — list accepted friends
-friendsRouter.get("/friends", async (req: AuthedRequest, res) => {
+friendsRouter.get("/", async (req: AuthedRequest, res) => {
   try {
     const friendships = await prisma.friendship.findMany({
       where: { userId: req.userId! },
@@ -34,7 +34,7 @@ friendsRouter.get("/friends", async (req: AuthedRequest, res) => {
 });
 
 // GET /friends/requests — incoming pending requests
-friendsRouter.get("/friends/requests", async (req: AuthedRequest, res) => {
+friendsRouter.get("/requests", async (req: AuthedRequest, res) => {
   try {
     const requests = await prisma.friendRequest.findMany({
       where: { toId: req.userId!, status: "pending" },
@@ -60,7 +60,7 @@ friendsRouter.get("/friends/requests", async (req: AuthedRequest, res) => {
 const requestSchema = z.object({ username: z.string().min(1) });
 
 // POST /friends/request — send a friend request by username
-friendsRouter.post("/friends/request", async (req: AuthedRequest, res) => {
+friendsRouter.post("/request", async (req: AuthedRequest, res) => {
   const parsed = requestSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -106,7 +106,7 @@ friendsRouter.post("/friends/request", async (req: AuthedRequest, res) => {
 const acceptSchema = z.object({ requestId: z.string().min(1) });
 
 // POST /friends/accept — accept a pending request
-friendsRouter.post("/friends/accept", async (req: AuthedRequest, res) => {
+friendsRouter.post("/accept", async (req: AuthedRequest, res) => {
   const parsed = acceptSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -136,7 +136,7 @@ friendsRouter.post("/friends/accept", async (req: AuthedRequest, res) => {
 const rejectSchema = z.object({ requestId: z.string().min(1) });
 
 // POST /friends/reject — reject a pending request
-friendsRouter.post("/friends/reject", async (req: AuthedRequest, res) => {
+friendsRouter.post("/reject", async (req: AuthedRequest, res) => {
   const parsed = rejectSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -159,7 +159,7 @@ friendsRouter.post("/friends/reject", async (req: AuthedRequest, res) => {
 });
 
 // DELETE /friends/:friendId — remove friendship (both directions)
-friendsRouter.delete("/friends/:friendId", async (req: AuthedRequest, res) => {
+friendsRouter.delete("/:friendId", async (req: AuthedRequest, res) => {
   const { friendId } = req.params;
   const userId = req.userId!;
 
