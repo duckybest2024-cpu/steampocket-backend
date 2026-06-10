@@ -16,7 +16,8 @@ export const instantGamesRouter = Router();
 function handleBetError(err: unknown, res: import("express").Response) {
   if (err instanceof InsufficientFundsError) return res.status(400).json({ error: "Insufficient balance" });
   if (err instanceof BadBetInputError) return res.status(400).json({ error: err.message });
-  throw err;
+  console.error("Unexpected game error:", err);
+  res.status(500).json({ error: "Something went wrong — please try again" });
 }
 
 // ---------------------------------------------------------------------------

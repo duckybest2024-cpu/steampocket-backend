@@ -29,8 +29,8 @@ const CrashGame = (() => {
 
             <div class="controls-row" style="margin-top:18px">
               <div class="field">
-                <label>Bet amount ($)</label>
-                <input type="number" id="crash-amount" value="10" min="0.01" step="0.01" />
+                <label>Bet (chips)</label>
+                <input type="number" id="crash-amount" value="10" min="1" step="1" />
               </div>
               <div class="field">
                 <label>Auto cash-out (optional)</label>

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { applyLedgerEntry, InsufficientFundsError } from "../lib/wallet";
+import { getStripe, CHIP_PACKAGES } from "../lib/stripe";
 
 export const walletRouter = Router();
 
@@ -41,6 +42,122 @@ walletRouter.post("/faucet", requireAuth, async (req: AuthedRequest, res) => {
 
   const updated = await applyLedgerEntry(prisma, user.id, "deposit", parsed.data.amount, "faucet_topup");
   res.json({ balance: updated.balance });
+});
+
+// ---------------------------------------------------------------------------
+// Stripe checkout — create a hosted payment session for a chip package
+// ---------------------------------------------------------------------------
+
+const checkoutSchema = z.object({ packageId: z.string() });
+
+walletRouter.post("/create-checkout-session", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return res.status(503).json({
+        error: "Payment not configured. Add STRIPE_SECRET_KEY to environment variables.",
+      });
+    }
+
+    const parsed = checkoutSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+    const pkg = CHIP_PACKAGES.find((p) => p.id === parsed.data.packageId);
+    if (!pkg) return res.status(400).json({ error: "Invalid package" });
+
+    const origin = `${req.protocol}://${req.get("host")}`;
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `${pkg.name} — ${pkg.chips} chips`,
+              description: `${pkg.chips.toLocaleString()} Casino Aurelius chips (play money). Use test card 4242 4242 4242 4242.`,
+            },
+            unit_amount: pkg.priceCents,
+          },
+          quantity: 1,
+        },
+      ],
+      mode: "payment",
+      success_url: `${origin}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/?checkout=cancel`,
+      metadata: {
+        userId: req.userId!,
+        packageId: pkg.id,
+        chips: String(pkg.chips),
+      },
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("Stripe checkout error:", err);
+    res.status(500).json({ error: "Failed to create checkout session — please try again" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Chip system: cash out chips to bank, buy chips from bank
+// ---------------------------------------------------------------------------
+
+const buyChipsSchema = z.object({ amount: z.number().int().min(100) });
+
+walletRouter.post("/buy-chips", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const parsed = buyChipsSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+    const userId = req.userId!;
+    const { amount } = parsed.data;
+
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (user.bank < amount) return res.status(400).json({ error: "Not enough chips in your bank" });
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id: userId },
+        data: { bank: { decrement: amount }, balance: { increment: amount } },
+      });
+      await tx.transaction.create({
+        data: { userId, type: "deposit", amount, balance: u.balance, reference: "buy_chips" },
+      });
+      return u;
+    });
+
+    res.json({ balance: updated.balance, bank: updated.bank });
+  } catch (err) {
+    console.error("Buy chips error:", err);
+    res.status(500).json({ error: "Transaction failed — please try again" });
+  }
+});
+
+walletRouter.post("/cashout-chips", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    if (user.balance <= 0) return res.status(400).json({ error: "No chips to cash out" });
+
+    const amount = user.balance;
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id: userId },
+        data: { balance: 0, bank: { increment: amount } },
+      });
+      await tx.transaction.create({
+        data: { userId, type: "withdrawal", amount: -amount, balance: 0, reference: "cashout_chips" },
+      });
+      return u;
+    });
+
+    res.json({ balance: updated.balance, bank: updated.bank, cashedOut: amount });
+  } catch (err) {
+    console.error("Cashout chips error:", err);
+    res.status(500).json({ error: "Transaction failed — please try again" });
+  }
 });
 
 /** Daily rakeback: 5% of cumulative wagers since the last claim, paid as a flat bonus. */
