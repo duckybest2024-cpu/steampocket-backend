@@ -24,44 +24,69 @@ const VideoPokerGame = (() => {
     let held = [false, false, false, false, false];
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🎴 Video Poker</h2>
-          <p>Jacks or Better. Click cards to hold, then Draw. Pair of Jacks+ pays 1x up to Royal Flush 800x.</p>
-        </div>
+      <div class="game-panel"><div class="game-layout">
 
-        <div class="vp-table">
-          <div class="vp-hand" id="vp-hand"></div>
-        </div>
-
-        <div class="vp-paytable">
-          ${PAY_TABLE.map(([h, m]) => `<div class="vpt-row"><span>${h}</span><span>${m}x</span></div>`).join("")}
-        </div>
-
-        <div class="controls-row" style="margin-top:14px">
-          <div class="field">
-            <label>Bet ($)</label>
-            <input type="number" id="vp-amount" value="1.00" min="0.01" step="0.01" />
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="vp-tab-manual">Manual</button>
+            <button class="bp-tab" id="vp-tab-auto">Auto</button>
           </div>
-          <div class="btn-row" style="align-items:flex-end">
-            <button id="vp-deal" class="primary-btn">Deal</button>
-            <button id="vp-draw" class="primary-btn hidden">Draw</button>
+
+          <div class="bp-field">
+            <div class="bp-label">Bet Amount ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="vp-amount" value="1.00" min="0.01" step="0.01" />
+              <button class="quick-btn" id="vp-half">½</button>
+              <button class="quick-btn" id="vp-dbl">2×</button>
+            </div>
+          </div>
+
+          <div style="flex:1; overflow-y:auto;">
+            <div class="bp-label" style="margin-bottom:6px;">Paytable</div>
+            <div id="vp-paytable" class="vp-paytable" style="font-size:0.78rem;"></div>
+          </div>
+
+          <div id="vp-deal-wrap" class="bp-bottom">
+            <button id="vp-deal" class="play-btn">Deal</button>
+            <button id="vp-draw" class="play-btn hidden">Draw</button>
           </div>
         </div>
 
-        <div id="vp-result" class="result-banner"></div>
-        <div id="vp-fairness"></div>
-      </div>
+        <div class="game-canvas">
+          <div id="vp-table" class="vp-table"><div id="vp-hand" class="vp-hand"></div></div>
+
+          <div id="vp-result" class="result-banner"></div>
+          <div id="vp-fairness" class="fairness-line"></div>
+        </div>
+
+      </div></div>
     `;
 
     const els = {
       hand: container.querySelector("#vp-hand"),
       amount: container.querySelector("#vp-amount"),
+      half: container.querySelector("#vp-half"),
+      dbl: container.querySelector("#vp-dbl"),
+      paytable: container.querySelector("#vp-paytable"),
+      dealWrap: container.querySelector("#vp-deal-wrap"),
       deal: container.querySelector("#vp-deal"),
       draw: container.querySelector("#vp-draw"),
       result: container.querySelector("#vp-result"),
       fairness: container.querySelector("#vp-fairness"),
     };
+
+    // Populate paytable
+    els.paytable.innerHTML = PAY_TABLE.map(([h, m]) => `<div class="vpt-row"><span>${h}</span><span>${m}x</span></div>`).join("");
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5)); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2); });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     function renderHand(cards, allowToggle, highlightIndexes) {
       els.hand.innerHTML = "";

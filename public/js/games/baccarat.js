@@ -4,44 +4,75 @@ const BaccaratGame = (() => {
     let betSide = "player";
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🎴 Baccarat</h2>
-          <p>Bet on Player (2x), Banker (1.95x), or Tie (9x). Closest to 9 wins.</p>
-        </div>
+      <div class="game-panel"><div class="game-layout">
 
-        <div class="bacc-table" id="bacc-table"></div>
-
-        <div class="controls-row">
-          <div class="field">
-            <label>Bet ($)</label>
-            <input type="number" id="bacc-amount" value="5.00" min="0.01" step="0.01" />
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="bacc-tab-manual">Manual</button>
+            <button class="bp-tab" id="bacc-tab-auto">Auto</button>
           </div>
-          <div class="field">
-            <label>Side</label>
-            <div class="toggle-group">
-              <button data-s="player" class="active">Player</button>
-              <button data-s="banker">Banker</button>
-              <button data-s="tie">Tie</button>
+
+          <div class="bp-field">
+            <div class="bp-label">Bet Amount ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="bacc-amount" value="5.00" min="0.01" step="0.01" />
+              <button class="quick-btn" id="bacc-half">½</button>
+              <button class="quick-btn" id="bacc-dbl">2×</button>
             </div>
           </div>
-          <div class="btn-row" style="align-items:flex-end">
-            <button id="bacc-deal" class="primary-btn">Deal</button>
+
+          <div class="bp-field">
+            <div class="bp-label">Bet On</div>
+            <div class="toggle-group">
+              <button id="bacc-player" class="active">Player</button>
+              <button id="bacc-banker">Banker</button>
+              <button id="bacc-tie">Tie</button>
+            </div>
           </div>
+
+          <hr class="bp-divider" />
+
+          <button id="bacc-deal" class="play-btn" style="margin-top:auto;">Deal</button>
         </div>
 
-        <div id="bacc-result" class="result-banner"></div>
-        <div id="bacc-fairness"></div>
-      </div>
+        <div class="game-canvas">
+          <div id="bacc-table" class="bacc-table"></div>
+
+          <div id="bacc-result" class="result-banner"></div>
+          <div id="bacc-fairness" class="fairness-line"></div>
+        </div>
+
+      </div></div>
     `;
 
     const els = {
       table: container.querySelector("#bacc-table"),
       amount: container.querySelector("#bacc-amount"),
+      half: container.querySelector("#bacc-half"),
+      dbl: container.querySelector("#bacc-dbl"),
       deal: container.querySelector("#bacc-deal"),
       result: container.querySelector("#bacc-result"),
       fairness: container.querySelector("#bacc-fairness"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5)); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2); });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
+
+    // Side selection toggle group
+    container.querySelectorAll(".toggle-group button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (busy) return;
+        betSide = btn.id === "bacc-player" ? "player" : btn.id === "bacc-banker" ? "banker" : "tie";
+        container.querySelectorAll(".toggle-group button").forEach((b) => b.classList.toggle("active", b === btn));
+      });
+    });
 
     function renderTable(playerCards, bankerCards, playerTotal, bankerTotal, winner) {
       function cardsHtml(cards) {
@@ -74,14 +105,6 @@ const BaccaratGame = (() => {
       `;
     }
     clearTable();
-
-    container.querySelectorAll(".toggle-group button").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (busy) return;
-        betSide = btn.dataset.s;
-        container.querySelectorAll(".toggle-group button").forEach((b) => b.classList.toggle("active", b === btn));
-      });
-    });
 
     els.deal.addEventListener("click", async () => {
       if (busy) return;

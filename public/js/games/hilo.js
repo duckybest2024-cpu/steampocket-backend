@@ -5,41 +5,55 @@ const HiloGame = (() => {
     let currentMultiplier = 1;
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>↕️ Hi-Lo</h2>
-          <p>Guess if the next card is Higher or Lower. Cashout anytime to lock in your multiplier!</p>
-        </div>
+      <div class="game-panel"><div class="game-layout">
 
-        <div class="hilo-stage">
-          <div class="hilo-card-wrap">
-            <div id="hilo-card" class="hilo-card-slot">🂠</div>
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="hilo-tab-manual">Manual</button>
+            <button class="bp-tab" id="hilo-tab-auto">Auto</button>
           </div>
-          <div class="hilo-info">
-            <div class="hilo-multi-label">Multiplier</div>
-            <div id="hilo-multi" class="hilo-multi">1.00x</div>
-            <div id="hilo-chances" class="hilo-chances"></div>
-          </div>
-        </div>
 
-        <div class="controls-row">
-          <div class="field">
-            <label>Bet ($)</label>
-            <input type="number" id="hilo-amount" value="5.00" min="0.01" step="0.01" />
+          <div class="bp-field">
+            <div class="bp-label">Bet ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="hilo-amount" value="5.00" min="0.01" step="0.01" style="flex:1;" />
+              <button class="quick-btn" id="hilo-half">½</button>
+              <button class="quick-btn" id="hilo-dbl">2×</button>
+            </div>
           </div>
-          <div class="btn-row" style="align-items:flex-end" id="hilo-start-row">
-            <button id="hilo-start" class="primary-btn">▶ Start</button>
+
+          <hr class="bp-divider" />
+
+          <div class="bp-field">
+            <div class="bp-label">Multiplier</div>
+            <div id="hilo-multi" class="hilo-multi" style="font-size:1.3rem; font-weight:800;">1.00×</div>
           </div>
-          <div class="btn-row hidden" id="hilo-action-row" style="align-items:flex-end">
-            <button id="hilo-higher" class="primary-btn">⬆ Higher</button>
-            <button id="hilo-lower" class="secondary-btn">⬇ Lower</button>
-            <button id="hilo-cashout" class="danger-btn">💰 Cashout</button>
+
+          <div class="bp-bottom">
+            <div id="hilo-start-row"><button id="hilo-start" class="play-btn">Start Round</button></div>
           </div>
         </div>
 
-        <div id="hilo-result" class="result-banner"></div>
-        <div id="hilo-fairness"></div>
-      </div>
+        <div class="game-canvas">
+          <div class="hilo-stage" style="justify-content:center; flex:1;">
+            <div class="hilo-card-wrap" style="transform:scale(1.3);">
+              <div class="hilo-card-slot" id="hilo-card">🂠</div>
+            </div>
+          </div>
+
+          <div id="hilo-chances" class="hilo-chances" style="justify-content:center;"></div>
+
+          <div class="btn-row hidden" id="hilo-action-row" style="justify-content:center; gap:12px;">
+            <button id="hilo-higher" class="primary-btn" style="flex:1; padding:16px 0;">⬆ Higher</button>
+            <button id="hilo-lower"  class="danger-btn"  style="flex:1; padding:16px 0;">⬇ Lower</button>
+            <button id="hilo-cashout" class="secondary-btn">Cash Out</button>
+          </div>
+
+          <div id="hilo-result" class="result-banner"></div>
+          <div id="hilo-fairness"></div>
+        </div>
+
+      </div></div>
     `;
 
     const els = {
@@ -55,7 +69,19 @@ const HiloGame = (() => {
       cashout: container.querySelector("#hilo-cashout"),
       result: container.querySelector("#hilo-result"),
       fairness: container.querySelector("#hilo-fairness"),
+      half: container.querySelector("#hilo-half"),
+      dbl: container.querySelector("#hilo-dbl"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(0.01, Math.floor(Number(els.amount.value) * 0.5 * 100) / 100); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2 * 100) / 100; });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     function renderCard(card) {
       const red = card.suit === "♥" || card.suit === "♦";
@@ -71,7 +97,7 @@ const HiloGame = (() => {
 
     function setMultiplier(m) {
       currentMultiplier = m;
-      els.multi.textContent = m.toFixed(2) + "x";
+      els.multi.textContent = m.toFixed(2) + "×";
     }
 
     function enterRound() {

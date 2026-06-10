@@ -166,6 +166,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 24px;
+  overflow: hidden;
 }
 
 .game-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; }
@@ -644,3 +645,241 @@ body {
 }
 .stripe-buy-btn:hover:not(:disabled) { filter: brightness(1.12); }
 .stripe-buy-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TWO-COLUMN GAME LAYOUT  (Stake / BC.Game / Tower.bet style)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Outer wrapper — replaces .game-panel's padding when two-col is used */
+.game-layout {
+  display: flex;
+  align-items: stretch;
+  min-height: 520px;
+  margin: -24px; /* bleed out of .game-panel padding */
+}
+
+/* Left bet-panel sidebar */
+.bet-panel {
+  width: 240px;
+  min-width: 240px;
+  background: var(--bg-elev);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Manual / Auto tab switcher */
+.bp-tabs {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+.bp-tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: background 0.15s, color 0.15s;
+}
+.bp-tab.active { background: var(--bg-card); color: var(--text); }
+
+/* Bet amount field */
+.bp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.bp-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.bp-input-row {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+.bp-input-row input {
+  flex: 1;
+  min-width: 0;
+}
+.bp-input-row select { flex: 1; min-width: 0; }
+
+/* ½ and 2× quick-bet buttons */
+.quick-btn {
+  padding: 8px 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.quick-btn:hover { color: var(--text); border-color: var(--accent); }
+
+/* Horizontal rule separator inside bet panel */
+.bp-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+/* Big green Play button always at the bottom */
+.play-btn {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #071c10;
+  font-weight: 800;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: filter 0.15s;
+  margin-top: auto;
+}
+.play-btn:hover { filter: brightness(1.1); }
+.play-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+.play-btn.danger-play {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  color: #1a0505;
+}
+.play-btn.secondary-play {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  margin-top: 0;
+}
+.play-btn.secondary-play:hover { border-color: var(--accent); filter: none; }
+
+/* Right-side game visual area */
+.game-canvas {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Stat boxes row (Dice, Limbo) */
+.stat-boxes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.stat-box {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.sb-label {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sb-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Range tick labels row (Dice) */
+.range-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 1px 0;
+}
+.range-ticks span { font-size: 0.69rem; color: var(--text-dim); }
+
+/* Recent results history bar (Limbo) */
+.limbo-history {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.limbo-history::-webkit-scrollbar { display: none; }
+.lh-chip {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.lh-chip.lhc-low  { color: var(--loss); border-color: rgba(248,113,113,0.45); background: rgba(248,113,113,0.08); }
+.lh-chip.lhc-mid  { color: var(--gold); border-color: rgba(251,191,36,0.45);  background: rgba(251,191,36,0.08); }
+.lh-chip.lhc-high { color: var(--win);  border-color: rgba(52,211,153,0.45);  background: rgba(52,211,153,0.08); }
+
+/* Mine-count quick-select chips (Mines) */
+.mine-opts {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.mine-opt {
+  flex: 1;
+  min-width: 32px;
+  padding: 7px 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+.mine-opt.active { border-color: var(--accent); color: var(--text); background: rgba(111,92,242,0.12); }
+.mine-opt:hover:not(.active) { border-color: var(--border); color: var(--text); }
+
+/* Bet panel bottom button cluster (used by Mines, Crash, Hi-Lo) */
+.bp-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* Mobile: stack bet-panel on top of game-canvas */
+@media (max-width: 700px) {
+  .game-layout {
+    flex-direction: column;
+    min-height: unset;
+    margin: -14px;
+  }
+  .bet-panel {
+    width: auto;
+    min-width: unset;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .game-canvas { padding: 14px; }
+  .stat-boxes { flex-wrap: wrap; }
+}

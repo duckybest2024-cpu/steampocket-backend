@@ -14,48 +14,69 @@ const SlotsGame = (() => {
     let busy = false;
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🎰 Slots</h2>
-          <p>5 reels, 3 rows, 25 paylines. Wilds 🌟 substitute for any symbol and double the win per wild in the combo; land 3+ scatters 🎁 for free spins.</p>
+      <div class="game-panel"><div class="game-layout">
+
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="slots-tab-manual">Manual</button>
+            <button class="bp-tab" id="slots-tab-auto">Auto</button>
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Bet Per Line ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="slots-linebet" value="0.20" min="0.01" step="0.01" />
+              <button class="quick-btn" id="slots-half">½</button>
+              <button class="quick-btn" id="slots-dbl">2×</button>
+            </div>
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Lines (1–25)</div>
+            <input type="number" id="slots-lines" value="10" min="1" max="25" step="1" />
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Total Bet</div>
+            <div id="slots-total" style="font-size:1.1rem; font-weight:800; color:var(--gold);">0 🪙</div>
+          </div>
+
+          <hr class="bp-divider" />
+
+          <button id="slots-spin" class="play-btn">Spin</button>
         </div>
 
-        <div class="slots-frame">
-          <div class="reels" id="slots-reels"></div>
+        <div class="game-canvas">
+          <div class="slots-frame"><div id="slots-reels" class="reels"></div></div>
+
+          <div id="slots-result" class="result-banner"></div>
+          <div id="slots-fairness" class="fairness-line"></div>
         </div>
 
-        <div class="controls-row">
-          <div class="field">
-            <label>Bet per line ($)</label>
-            <input type="number" id="slots-linebet" value="0.20" min="0.01" step="0.01" />
-          </div>
-          <div class="field">
-            <label>Lines (1-25)</label>
-            <input type="number" id="slots-lines" value="25" min="1" max="25" step="1" />
-          </div>
-          <div class="field">
-            <label>Total bet</label>
-            <input type="text" id="slots-total" value="$5.00" disabled />
-          </div>
-          <div class="btn-row">
-            <button id="slots-spin" class="primary-btn">🎰 Spin</button>
-          </div>
-        </div>
-
-        <div id="slots-result" class="result-banner"></div>
-        <div id="slots-fairness"></div>
-      </div>
+      </div></div>
     `;
 
     const els = {
       reels: container.querySelector("#slots-reels"),
       lineBet: container.querySelector("#slots-linebet"),
+      half: container.querySelector("#slots-half"),
+      dbl: container.querySelector("#slots-dbl"),
       lines: container.querySelector("#slots-lines"),
       total: container.querySelector("#slots-total"),
       spin: container.querySelector("#slots-spin"),
       result: container.querySelector("#slots-result"),
       fairness: container.querySelector("#slots-fairness"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.lineBet.value = Math.max(0.01, Math.floor(Number(els.lineBet.value) * 0.5 * 100) / 100); refreshTotal(); });
+    els.dbl.addEventListener("click", () => { els.lineBet.value = Math.floor(Number(els.lineBet.value) * 2 * 100) / 100; refreshTotal(); });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     function buildGrid(grid) {
       els.reels.innerHTML = "";
@@ -106,9 +127,8 @@ const SlotsGame = (() => {
     }
 
     function refreshTotal() {
-      const lineBet = Math.round((Number(els.lineBet.value) || 0) * 100);
-      const lines = Math.max(1, Math.min(25, Number(els.lines.value) || 1));
-      els.total.value = UI.money(lineBet * lines);
+      const total = Math.round(Number(els.lineBet.value) * Number(els.lines.value) * 100) / 100;
+      els.total.textContent = `${total} 🪙`;
     }
     els.lineBet.addEventListener("input", refreshTotal);
     els.lines.addEventListener("input", refreshTotal);

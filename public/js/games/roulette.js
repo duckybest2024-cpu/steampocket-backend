@@ -8,44 +8,61 @@ const RouletteGame = (() => {
     let busy = false;
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🎡 Roulette</h2>
-          <p>European single-zero wheel. Click numbers for straight-up bets, or use the outside bets below — stake is split evenly across every selection you make.</p>
+      <div class="game-panel"><div class="game-layout">
+
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="roulette-tab-manual">Manual</button>
+            <button class="bp-tab" id="roulette-tab-auto">Auto</button>
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Stake Amount ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="roulette-amount" value="10" min="0.01" step="0.01" />
+              <button class="quick-btn" id="roulette-half">½</button>
+              <button class="quick-btn" id="roulette-dbl">2×</button>
+            </div>
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Selected Bets</div>
+            <div id="roulette-summary" style="font-size:0.8rem; color:var(--text-dim); min-height:20px;"></div>
+          </div>
+
+          <hr class="bp-divider" />
+
+          <div class="bp-bottom">
+            <button id="roulette-spin" class="play-btn">Spin</button>
+            <button id="roulette-clear" class="play-btn secondary-play">Clear Bets</button>
+          </div>
         </div>
 
-        <div class="roulette-board" id="roulette-numbers"></div>
-        <div class="outside-bets" id="roulette-outside"></div>
+        <div class="game-canvas">
+          <div id="roulette-numbers" class="roulette-board"></div>
+          <div id="roulette-outside" class="outside-bets"></div>
 
-        <div class="controls-row" style="margin-top:18px">
-          <div class="field">
-            <label>Total stake ($)</label>
-            <input type="number" id="roulette-amount" value="10" min="0.01" step="0.01" />
+          <div id="roulette-wheel-result" class="hidden" style="text-align:center;">
+            <div class="pocket-badge" id="roulette-pocket">--</div>
+            <div>
+              <div id="roulette-pocket-label" style="font-weight:700"></div>
+              <div id="roulette-pocket-sub" style="color:var(--text-dim); font-size:0.85rem"></div>
+            </div>
           </div>
-          <div class="btn-row">
-            <button id="roulette-clear" class="secondary-btn">Clear bets</button>
-            <button id="roulette-spin" class="primary-btn">Spin</button>
-          </div>
-        </div>
-        <p id="roulette-summary" style="color:var(--text-dim); font-size:0.85rem">No bets selected yet — click numbers or outside bets above.</p>
 
-        <div class="wheel-result hidden" id="roulette-wheel-result">
-          <div class="pocket-badge" id="roulette-pocket">--</div>
-          <div>
-            <div id="roulette-pocket-label" style="font-weight:700"></div>
-            <div id="roulette-pocket-sub" style="color:var(--text-dim); font-size:0.85rem"></div>
-          </div>
+          <div id="roulette-result" class="result-banner"></div>
+          <div id="roulette-fairness" class="fairness-line"></div>
         </div>
 
-        <div id="roulette-result" class="result-banner"></div>
-        <div id="roulette-fairness"></div>
-      </div>
+      </div></div>
     `;
 
     const els = {
       numbers: container.querySelector("#roulette-numbers"),
       outside: container.querySelector("#roulette-outside"),
       amount: container.querySelector("#roulette-amount"),
+      half: container.querySelector("#roulette-half"),
+      dbl: container.querySelector("#roulette-dbl"),
       clear: container.querySelector("#roulette-clear"),
       spin: container.querySelector("#roulette-spin"),
       summary: container.querySelector("#roulette-summary"),
@@ -56,6 +73,16 @@ const RouletteGame = (() => {
       result: container.querySelector("#roulette-result"),
       fairness: container.querySelector("#roulette-fairness"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5)); refreshSummary(); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2); refreshSummary(); });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     function buildNumberGrid() {
       els.numbers.innerHTML = "";

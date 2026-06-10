@@ -12,48 +12,70 @@ const WheelGame = (() => {
     let risk = "medium";
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🎡 Wheel</h2>
-          <p>Spin the wheel. Low risk = frequent small wins. High risk = rare huge wins.</p>
-        </div>
+      <div class="game-panel"><div class="game-layout">
 
-        <div class="wheel-wrap">
-          <canvas id="wheel-canvas" width="280" height="280"></canvas>
-          <div class="wheel-pointer">▼</div>
-        </div>
-
-        <div class="controls-row" style="margin-top:14px">
-          <div class="field">
-            <label>Bet ($)</label>
-            <input type="number" id="wheel-amount" value="1.00" min="0.01" step="0.01" />
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="wheel-tab-manual">Manual</button>
+            <button class="bp-tab" id="wheel-tab-auto">Auto</button>
           </div>
-          <div class="field">
-            <label>Risk</label>
-            <div class="toggle-group">
-              <button data-r="low">Low</button>
-              <button data-r="medium" class="active">Med</button>
-              <button data-r="high">High</button>
+
+          <div class="bp-field">
+            <div class="bp-label">Bet Amount ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="wheel-amount" value="1.00" min="0.01" step="0.01" />
+              <button class="quick-btn" id="wheel-half">½</button>
+              <button class="quick-btn" id="wheel-dbl">2×</button>
             </div>
           </div>
-          <div class="btn-row" style="align-items:flex-end">
-            <button id="wheel-spin" class="primary-btn">🎡 Spin</button>
+
+          <div class="bp-field">
+            <div class="bp-label">Risk</div>
+            <div class="toggle-group">
+              <button id="wheel-low" data-r="low">Low</button>
+              <button id="wheel-med" data-r="medium" class="active">Med</button>
+              <button id="wheel-high" data-r="high">High</button>
+            </div>
           </div>
+
+          <hr class="bp-divider" />
+
+          <button id="wheel-spin" class="play-btn">Spin</button>
         </div>
 
-        <div id="wheel-result" class="result-banner"></div>
-        <div id="wheel-fairness"></div>
-      </div>
+        <div class="game-canvas">
+          <div class="wheel-wrap" style="display:flex; justify-content:center; align-items:center; flex:1;">
+            <canvas id="wheel-canvas" width="280" height="280"></canvas>
+            <div class="wheel-pointer">▼</div>
+          </div>
+
+          <div id="wheel-result" class="result-banner"></div>
+          <div id="wheel-fairness" class="fairness-line"></div>
+        </div>
+
+      </div></div>
     `;
 
     const canvas = container.querySelector("#wheel-canvas");
     const ctx = canvas.getContext("2d");
     const els = {
       amount: container.querySelector("#wheel-amount"),
+      half: container.querySelector("#wheel-half"),
+      dbl: container.querySelector("#wheel-dbl"),
       spin: container.querySelector("#wheel-spin"),
       result: container.querySelector("#wheel-result"),
       fairness: container.querySelector("#wheel-fairness"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5)); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2); });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     function segmentsForRisk(r) {
       const segs = SEGMENTS[r];

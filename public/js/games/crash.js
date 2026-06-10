@@ -13,45 +13,54 @@ const CrashGame = (() => {
     let countdownHandle = null;
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🚀 Crash</h2>
-          <p>One shared multiplier, climbing live for everyone at once. Place a bet before betting closes, then cash out before it crashes — wait too long and it's gone.</p>
-        </div>
+      <div class="game-panel"><div class="game-layout">
 
-        <div class="two-col">
-          <div>
-            <div class="crash-stage" id="crash-stage">
-              <div class="crash-multiplier betting" id="crash-multiplier">--</div>
-              <div class="crash-phase-label" id="crash-phase-label">Connecting to the table…</div>
-            </div>
-            <div class="crash-history" id="crash-history"></div>
-
-            <div class="controls-row" style="margin-top:18px">
-              <div class="field">
-                <label>Bet (chips)</label>
-                <input type="number" id="crash-amount" value="10" min="1" step="1" />
-              </div>
-              <div class="field">
-                <label>Auto cash-out (optional)</label>
-                <input type="number" id="crash-auto" placeholder="e.g. 2.00" min="1.01" step="0.01" />
-              </div>
-              <div class="btn-row">
-                <button id="crash-bet-btn" class="primary-btn" disabled>Connecting…</button>
-                <button id="crash-cashout-btn" class="secondary-btn hidden">Cash out</button>
-              </div>
-            </div>
-
-            <div id="crash-result" class="result-banner"></div>
-            <div id="crash-fairness"></div>
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="crash-tab-manual">Manual</button>
+            <button class="bp-tab" id="crash-tab-auto">Auto</button>
           </div>
 
-          <div>
-            <h4 style="margin-bottom:10px">Live bets (<span id="crash-bet-count">0</span>)</h4>
-            <div class="crash-bets-list" id="crash-bets-list"></div>
+          <div class="bp-field">
+            <div class="bp-label">Bet amount (chips)</div>
+            <div class="bp-input-row">
+              <input type="number" id="crash-amount" value="10" min="1" step="1" style="flex:1;" />
+              <button class="quick-btn" id="crash-half">½</button>
+              <button class="quick-btn" id="crash-dbl">2×</button>
+            </div>
+          </div>
+
+          <hr class="bp-divider" />
+
+          <div class="bp-field">
+            <div class="bp-label">Auto cash-out (optional)</div>
+            <input type="number" id="crash-auto" placeholder="e.g. 2.00" min="1.01" step="0.01" />
+          </div>
+
+          <div class="bp-bottom">
+            <button id="crash-bet-btn" class="play-btn" disabled>Connecting…</button>
+            <button id="crash-cashout-btn" class="play-btn secondary-play hidden">Cash Out</button>
           </div>
         </div>
-      </div>
+
+        <div class="game-canvas">
+          <div class="crash-stage" id="crash-stage">
+            <div class="crash-multiplier betting" id="crash-multiplier">--</div>
+            <div class="crash-phase-label" id="crash-phase-label">Connecting to the table…</div>
+          </div>
+
+          <div class="crash-history" id="crash-history"></div>
+
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+            <span style="font-weight:700; font-size:0.9rem;">Live bets (<span id="crash-bet-count">0</span>)</span>
+          </div>
+          <div class="crash-bets-list" id="crash-bets-list"></div>
+
+          <div id="crash-result" class="result-banner"></div>
+          <div id="crash-fairness"></div>
+        </div>
+
+      </div></div>
     `;
 
     const els = {
@@ -66,7 +75,19 @@ const CrashGame = (() => {
       fairness: container.querySelector("#crash-fairness"),
       betCount: container.querySelector("#crash-bet-count"),
       betsList: container.querySelector("#crash-bets-list"),
+      half: container.querySelector("#crash-half"),
+      dbl: container.querySelector("#crash-dbl"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5)); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2); });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     function setMultiplier(text, cls) {
       els.multiplier.textContent = text;

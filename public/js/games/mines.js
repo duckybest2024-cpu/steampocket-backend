@@ -2,54 +2,92 @@ const MinesGame = (() => {
   function render(container, accountState) {
     let active = null; // { amount, mineCount, revealed, currentMultiplier, nextMultiplier }
     let busy = false;
+    let roundActive = false;
 
     container.innerHTML = `
       <div class="game-panel">
-        <div class="game-header">
-          <h2>💣 Mines</h2>
-          <p>Pick how many mines hide in the 5x5 grid, then reveal tiles one at a time. Every safe tile compounds your multiplier — cash out before you hit a mine.</p>
+        <div class="game-layout">
+
+          <div class="bet-panel">
+            <div class="bp-tabs">
+              <button class="bp-tab active" id="mines-tab-manual">Manual</button>
+              <button class="bp-tab" id="mines-tab-auto">Auto</button>
+            </div>
+
+            <div class="bp-field">
+              <div class="bp-label">Bet Amount</div>
+              <div class="bp-input-row">
+                <input type="number" id="mines-amount" value="10" min="0.01" step="0.01" />
+                <button class="quick-btn" id="mines-half">½</button>
+                <button class="quick-btn" id="mines-dbl">2×</button>
+              </div>
+            </div>
+
+            <div class="bp-field">
+              <div class="bp-label">Mines</div>
+              <div class="mine-opts">
+                <button class="mine-opt active" data-count="3">3</button>
+                <button class="mine-opt" data-count="5">5</button>
+                <button class="mine-opt" data-count="10">10</button>
+                <button class="mine-opt" data-count="15">15</button>
+                <button class="mine-opt" data-count="20">20</button>
+              </div>
+              <input type="hidden" id="mines-count" value="3" />
+            </div>
+
+            <div class="bp-bottom">
+              <button id="mines-start" class="play-btn">Start Round</button>
+              <button id="mines-cashout" class="play-btn secondary-play" disabled>Cash Out 0.00×</button>
+            </div>
+          </div>
+
+          <div class="game-canvas">
+            <div id="mines-stats" style="text-align:center; color: var(--text-dim); font-size:0.85rem;"></div>
+            <div class="mines-grid" id="mines-grid"></div>
+            <div id="mines-result" class="result-banner"></div>
+            <div id="mines-fairness" class="fairness-line"></div>
+          </div>
+
         </div>
-
-        <div class="mines-grid" id="mines-grid"></div>
-
-        <p style="text-align:center; color:var(--text-dim); font-size:0.9rem">
-          Current multiplier: <strong id="mines-current" style="color:var(--win)">1.00x</strong>
-          &nbsp;·&nbsp; Next safe tile: <strong id="mines-next">--</strong>
-          &nbsp;·&nbsp; Potential payout: <strong id="mines-payout">$0.00</strong>
-        </p>
-
-        <div class="controls-row" style="margin-top:14px">
-          <div class="field">
-            <label>Bet amount ($)</label>
-            <input type="number" id="mines-amount" value="10" min="0.01" step="0.01" />
-          </div>
-          <div class="field">
-            <label>Mines (1-24)</label>
-            <input type="number" id="mines-count" value="3" min="1" max="24" step="1" />
-          </div>
-          <div class="btn-row">
-            <button id="mines-start" class="primary-btn">Start round</button>
-            <button id="mines-cashout" class="secondary-btn" disabled>Cash out</button>
-          </div>
-        </div>
-
-        <div id="mines-result" class="result-banner"></div>
-        <div id="mines-fairness"></div>
       </div>
     `;
 
     const els = {
       grid: container.querySelector("#mines-grid"),
-      current: container.querySelector("#mines-current"),
-      next: container.querySelector("#mines-next"),
-      payout: container.querySelector("#mines-payout"),
+      stats: container.querySelector("#mines-stats"),
       amount: container.querySelector("#mines-amount"),
+      half: container.querySelector("#mines-half"),
+      dbl: container.querySelector("#mines-dbl"),
       count: container.querySelector("#mines-count"),
       start: container.querySelector("#mines-start"),
       cashout: container.querySelector("#mines-cashout"),
       result: container.querySelector("#mines-result"),
       fairness: container.querySelector("#mines-fairness"),
     };
+
+    // Wire ½ and 2× buttons
+    els.half.addEventListener("click", () => {
+      els.amount.value = Math.max(0.01, Math.floor(Number(els.amount.value) * 0.5 * 100) / 100);
+    });
+    els.dbl.addEventListener("click", () => {
+      els.amount.value = Math.floor(Number(els.amount.value) * 2 * 100) / 100;
+    });
+
+    // Wire Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
+
+    // Wire mine-opt quick-select buttons
+    container.querySelectorAll(".mine-opt").forEach(opt => {
+      opt.addEventListener("click", () => {
+        if (roundActive) return;
+        container.querySelectorAll(".mine-opt").forEach(o => o.classList.remove("active"));
+        opt.classList.add("active");
+        els.count.value = opt.dataset.count;
+      });
+    });
 
     function buildGrid() {
       els.grid.innerHTML = "";
@@ -61,22 +99,26 @@ const MinesGame = (() => {
     }
 
     function setControlsForRound(inRound) {
-      els.start.disabled = inRound;
+      roundActive = inRound;
       els.amount.disabled = inRound;
-      els.count.disabled = inRound;
-      els.cashout.disabled = !inRound || !active || active.revealed.length === 0;
+      els.start.classList.toggle("hidden", inRound);
+      els.cashout.disabled = !inRound;
+      container.querySelectorAll(".mine-opt").forEach(o => {
+        o.style.opacity = inRound ? "0.4" : "1";
+        o.style.pointerEvents = inRound ? "none" : "";
+      });
     }
 
     function refreshStats() {
       if (!active) {
-        els.current.textContent = "1.00x";
-        els.next.textContent = "--";
-        els.payout.textContent = "$0.00";
+        els.stats.textContent = "";
+        els.cashout.textContent = "Cash Out 0.00×";
         return;
       }
-      els.current.textContent = `${active.currentMultiplier.toFixed(2)}x`;
-      els.next.textContent = `${active.nextMultiplier.toFixed(2)}x`;
-      els.payout.textContent = UI.money(Math.floor(active.amount * active.currentMultiplier));
+      els.stats.innerHTML = `Current multiplier: <strong style="color:var(--win)">${active.currentMultiplier.toFixed(2)}x</strong>` +
+        `&nbsp;·&nbsp; Next safe tile: <strong>${active.nextMultiplier ? active.nextMultiplier.toFixed(2) + "x" : "--"}</strong>` +
+        `&nbsp;·&nbsp; Potential payout: <strong>${UI.money(Math.floor(active.amount * active.currentMultiplier))}</strong>`;
+      els.cashout.textContent = `Cash Out ${active.currentMultiplier.toFixed(2)}×`;
     }
 
     function paintTile(index, kind, glyph) {
@@ -190,6 +232,7 @@ const MinesGame = (() => {
     function finishRound() {
       active = null;
       setControlsForRound(false);
+      refreshStats();
       for (const tile of els.grid.querySelectorAll(".mine-tile")) tile.classList.add("disabled");
     }
 

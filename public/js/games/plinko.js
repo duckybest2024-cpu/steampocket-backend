@@ -6,46 +6,56 @@ const PlinkoGame = (() => {
 
     container.innerHTML = `
       <div class="game-panel">
-        <div class="game-header">
-          <h2>🔵 Plinko</h2>
-          <p>Drop a ball through a peg board — every bounce is a 50/50. Edges pay big, the middle pays small.</p>
-        </div>
+        <div class="game-layout">
 
-        <div class="plinko-board" id="plinko-board"></div>
-        <div class="plinko-slots-wrap" id="plinko-slots-wrap">
-          <div class="plinko-slots" id="plinko-slots"></div>
-        </div>
+          <div class="bet-panel">
+            <div class="bp-tabs">
+              <button class="bp-tab active" id="plinko-tab-manual">Manual</button>
+              <button class="bp-tab" id="plinko-tab-auto">Auto</button>
+            </div>
 
-        <div class="controls-row" style="margin-top:18px">
-          <div class="field">
-            <label>Bet (chips)</label>
-            <input type="number" id="plinko-amount" value="10" min="1" step="1" />
-          </div>
-          <div class="field">
-            <label>Risk</label>
-            <select id="plinko-risk">
-              <option value="low">Low</option>
-              <option value="medium" selected>Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Rows</label>
-            <select id="plinko-rows">
-              <option value="8">8</option>
-              <option value="10">10</option>
-              <option value="12" selected>12</option>
-              <option value="14">14</option>
-              <option value="16">16</option>
-            </select>
-          </div>
-          <div class="btn-row">
-            <button id="plinko-drop" class="primary-btn">Drop ball</button>
-          </div>
-        </div>
+            <div class="bp-field">
+              <div class="bp-label">Bet Amount</div>
+              <div class="bp-input-row">
+                <input type="number" id="plinko-amount" value="10" min="1" step="1" />
+                <button class="quick-btn" id="plinko-half">½</button>
+                <button class="quick-btn" id="plinko-dbl">2×</button>
+              </div>
+            </div>
 
-        <div id="plinko-result" class="result-banner"></div>
-        <div id="plinko-fairness"></div>
+            <div class="bp-field">
+              <div class="bp-label">Risk</div>
+              <select id="plinko-risk">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+
+            <div class="bp-field">
+              <div class="bp-label">Rows</div>
+              <select id="plinko-rows">
+                <option value="8">8</option>
+                <option value="10">10</option>
+                <option value="12" selected>12</option>
+                <option value="14">14</option>
+                <option value="16">16</option>
+              </select>
+            </div>
+
+            <button id="plinko-drop" class="play-btn">Drop Ball</button>
+          </div>
+
+          <div class="game-canvas">
+            <div class="plinko-board" id="plinko-board" style="flex:1; min-height:380px; position:relative;"></div>
+            <div class="plinko-slots-wrap" id="plinko-slots-wrap">
+              <div class="plinko-slots" id="plinko-slots"></div>
+            </div>
+            <div id="plinko-result" class="result-banner"></div>
+            <div id="plinko-fairness" class="fairness-line"></div>
+          </div>
+
+        </div>
       </div>
     `;
 
@@ -54,6 +64,8 @@ const PlinkoGame = (() => {
       slotsWrap: container.querySelector("#plinko-slots-wrap"),
       slots: container.querySelector("#plinko-slots"),
       amount: container.querySelector("#plinko-amount"),
+      half: container.querySelector("#plinko-half"),
+      dbl: container.querySelector("#plinko-dbl"),
       riskSel: container.querySelector("#plinko-risk"),
       rowsSel: container.querySelector("#plinko-rows"),
       drop: container.querySelector("#plinko-drop"),
@@ -163,6 +175,18 @@ const PlinkoGame = (() => {
 
     els.riskSel.addEventListener("change", () => { risk = els.riskSel.value; refreshLayout(); });
     els.rowsSel.addEventListener("change", () => { rows = Number(els.rowsSel.value); refreshLayout(); });
+
+    els.half.addEventListener("click", () => {
+      els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5));
+    });
+    els.dbl.addEventListener("click", () => {
+      els.amount.value = Math.floor(Number(els.amount.value) * 2);
+    });
+
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     let resizeTimer;
     window.addEventListener("resize", () => {

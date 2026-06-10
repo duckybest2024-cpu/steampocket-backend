@@ -16,46 +16,69 @@ const KenoGame = (() => {
     let busy = false;
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🎯 Keno</h2>
-          <p>Pick 2–10 numbers. House draws 20 from 1–80. More matches = bigger win.</p>
+      <div class="game-panel"><div class="game-layout">
+
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="keno-tab-manual">Manual</button>
+            <button class="bp-tab" id="keno-tab-auto">Auto</button>
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Bet ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="keno-amount" value="1.00" min="0.01" step="0.01" style="flex:1;" />
+              <button class="quick-btn" id="keno-half">½</button>
+              <button class="quick-btn" id="keno-dbl">2×</button>
+            </div>
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Picks selected</div>
+            <div id="keno-pick-hint" style="color: var(--text-dim); font-size: 0.85rem;">Select 2–10 numbers</div>
+          </div>
+
+          <hr class="bp-divider" />
+
+          <div id="keno-paytable" style="flex:1; overflow-y:auto; font-size:0.78rem;"></div>
+
+          <div class="bp-bottom">
+            <button id="keno-play" class="play-btn" disabled>Play Keno</button>
+            <button id="keno-clear" class="play-btn secondary-play">Clear</button>
+          </div>
         </div>
 
-        <div class="keno-grid" id="keno-grid"></div>
-
-        <div class="controls-row" style="margin-top:14px">
-          <div class="field">
-            <label>Bet ($)</label>
-            <input type="number" id="keno-amount" value="1.00" min="0.01" step="0.01" />
-          </div>
-          <div class="field">
-            <label>Picks (<span id="keno-pick-count">0</span>/10)</label>
-            <span id="keno-pick-hint" style="font-size:0.8rem;color:var(--text-dim)">Select 2–10 numbers</span>
-          </div>
-          <div class="btn-row" style="align-items:flex-end">
-            <button id="keno-play" class="primary-btn" disabled>🎯 Play</button>
-            <button id="keno-clear" class="secondary-btn">Clear</button>
-          </div>
+        <div class="game-canvas">
+          <div class="keno-grid" id="keno-grid"></div>
+          <div id="keno-result" class="result-banner"></div>
+          <div id="keno-fairness"></div>
         </div>
 
-        <div class="keno-paytable" id="keno-paytable"></div>
-        <div id="keno-result" class="result-banner"></div>
-        <div id="keno-fairness"></div>
-      </div>
+      </div></div>
     `;
 
     const els = {
       grid: container.querySelector("#keno-grid"),
       amount: container.querySelector("#keno-amount"),
-      pickCount: container.querySelector("#keno-pick-count"),
       pickHint: container.querySelector("#keno-pick-hint"),
       play: container.querySelector("#keno-play"),
       clear: container.querySelector("#keno-clear"),
       paytable: container.querySelector("#keno-paytable"),
       result: container.querySelector("#keno-result"),
       fairness: container.querySelector("#keno-fairness"),
+      half: container.querySelector("#keno-half"),
+      dbl: container.querySelector("#keno-dbl"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(0.01, Math.floor(Number(els.amount.value) * 0.5 * 100) / 100); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2 * 100) / 100; });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     // Build 80-number grid
     for (let n = 1; n <= 80; n++) {
@@ -79,7 +102,9 @@ const KenoGame = (() => {
 
     function updateUI() {
       const cnt = picks.size;
-      els.pickCount.textContent = cnt;
+      els.pickHint.textContent = picks.size === 0 ? "Select 2–10 numbers" :
+        picks.size < 2 ? `${picks.size} selected — pick ${2 - picks.size} more` :
+        `${picks.size}/10 selected`;
       els.play.disabled = busy || cnt < 2;
       renderPaytable(cnt);
     }

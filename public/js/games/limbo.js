@@ -1,43 +1,63 @@
 const LimboGame = (() => {
   function render(container, accountState) {
+    let limboHistory = [];
+
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>📈 Limbo</h2>
-          <p>Call a multiplier. The house generates a "crash point" — clear it and you win exactly your called multiplier.</p>
-        </div>
+      <div class="game-panel"><div class="game-layout">
 
-        <div class="roll-display"><span id="limbo-number" class="roll-number">--x</span></div>
-
-        <div class="controls-row">
-          <div class="field">
-            <label>Bet amount ($)</label>
-            <input type="number" id="limbo-amount" value="10" min="0.01" step="0.01" />
+        <aside class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="limbo-tab-manual">Manual</button>
+            <button class="bp-tab" id="limbo-tab-auto">Auto</button>
           </div>
-          <div class="field">
-            <label>Target multiplier</label>
+
+          <div class="bp-field">
+            <label class="bp-label">Bet Amount ($)</label>
+            <div class="bp-input-row">
+              <input type="number" id="limbo-amount" value="10" min="0.01" step="0.01" />
+              <button class="quick-btn" id="limbo-half">½</button>
+              <button class="quick-btn" id="limbo-dbl">2×</button>
+            </div>
+          </div>
+
+          <div class="bp-field">
+            <label class="bp-label">Target Multiplier</label>
             <input type="number" id="limbo-target" value="2.00" min="1.01" step="0.01" />
           </div>
-          <div class="field">
-            <label>Win chance</label>
-            <input type="text" id="limbo-chance" value="49.50%" disabled />
+
+          <div class="bp-field">
+            <label class="bp-label">Win Chance</label>
+            <input type="text" id="limbo-wc" value="49.50%" disabled />
           </div>
-          <div class="btn-row">
-            <button id="limbo-play" class="primary-btn">Play</button>
+
+          <hr class="bp-divider" />
+
+          <div class="bp-bottom">
+            <button class="play-btn" id="limbo-bet">Bet</button>
           </div>
+        </aside>
+
+        <div class="game-canvas">
+          <div class="limbo-history" id="limbo-history"></div>
+
+          <div class="roll-display"><span id="limbo-number" class="roll-number">--x</span></div>
+
+          <div id="limbo-result" class="result-banner"></div>
+          <div id="limbo-fairness" class="fairness-line"></div>
         </div>
 
-        <div id="limbo-result" class="result-banner"></div>
-        <div id="limbo-fairness"></div>
-      </div>
+      </div></div>
     `;
 
     const els = {
       number: container.querySelector("#limbo-number"),
       amount: container.querySelector("#limbo-amount"),
+      half: container.querySelector("#limbo-half"),
+      dbl: container.querySelector("#limbo-dbl"),
       target: container.querySelector("#limbo-target"),
-      chance: container.querySelector("#limbo-chance"),
-      play: container.querySelector("#limbo-play"),
+      chance: container.querySelector("#limbo-wc"),
+      play: container.querySelector("#limbo-bet"),
+      history: container.querySelector("#limbo-history"),
       result: container.querySelector("#limbo-result"),
       fairness: container.querySelector("#limbo-fairness"),
     };
@@ -49,6 +69,20 @@ const LimboGame = (() => {
       els.chance.value = `${chance.toFixed(2)}%`;
     }
     els.target.addEventListener("input", refreshChance);
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => {
+      els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5));
+    });
+    els.dbl.addEventListener("click", () => {
+      els.amount.value = Math.floor(Number(els.amount.value) * 2);
+    });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     els.play.addEventListener("click", async () => {
       const dollars = Number(els.amount.value);
@@ -67,6 +101,7 @@ const LimboGame = (() => {
         const isWin = res.result.result === "win";
 
         animateCountUp(els.number, crashAt, isWin);
+
         els.result.className = `result-banner show ${isWin ? "win" : "loss"}`;
         els.result.textContent = isWin
           ? `🎉 Crashed at ${crashAt}x — your ${targetMultiplier}x call landed! Won ${UI.money(res.result.payout)}.`
@@ -77,6 +112,15 @@ const LimboGame = (() => {
           clientSeed: accountState.fairness?.clientSeed,
           nonce: res.nextNonce - 1,
         });
+
+        // Update history chips
+        limboHistory.unshift(crashAt);
+        if (limboHistory.length > 10) limboHistory.pop();
+        const histEl = els.history;
+        histEl.innerHTML = limboHistory.map(v => {
+          const cls = v < 2 ? "lhc-low" : v < 10 ? "lhc-mid" : "lhc-high";
+          return `<span class="lh-chip ${cls}">${v.toFixed(2)}×</span>`;
+        }).join("");
 
         UI.applyAccountUpdate(accountState, res);
         UI.toast(isWin ? `Won ${UI.money(res.result.payout)} on Limbo!` : `Lost ${UI.money(amount)} on Limbo.`, isWin ? "win" : "loss");

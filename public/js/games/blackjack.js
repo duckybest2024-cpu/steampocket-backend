@@ -4,23 +4,34 @@ const BlackjackGame = (() => {
     let busy = false;
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-header">
-          <h2>🃏 Blackjack</h2>
-          <p>Six-deck shoe, dealer stands on all 17s, naturals pay 3:2. Hit, stand, double, split pairs, surrender, or take insurance against a dealer Ace.</p>
+      <div class="game-panel"><div class="game-layout">
+
+        <div class="bet-panel">
+          <div class="bp-tabs">
+            <button class="bp-tab active" id="bj-tab-manual">Manual</button>
+            <button class="bp-tab" id="bj-tab-auto">Auto</button>
+          </div>
+
+          <div class="bp-field">
+            <div class="bp-label">Bet Amount ($)</div>
+            <div class="bp-input-row">
+              <input type="number" id="bj-amount" value="10" min="0.01" step="0.01" />
+              <button class="quick-btn" id="bj-half">½</button>
+              <button class="quick-btn" id="bj-dbl">2×</button>
+            </div>
+          </div>
+
+          <hr class="bp-divider" />
+
+          <div id="bj-deal-row">
+            <button id="bj-deal" class="play-btn">Deal</button>
+          </div>
         </div>
 
-        <div class="bj-area" id="bj-table"></div>
+        <div class="game-canvas">
+          <div class="bj-area" id="bj-table"></div>
 
-        <div class="controls-row" style="margin-top:18px">
-          <div class="field">
-            <label>Bet amount ($)</label>
-            <input type="number" id="bj-amount" value="10" min="0.01" step="0.01" />
-          </div>
-          <div class="btn-row" id="bj-deal-row">
-            <button id="bj-deal" class="primary-btn">Deal</button>
-          </div>
-          <div class="btn-row hidden" id="bj-action-row">
+          <div class="btn-row hidden" id="bj-action-row" style="flex-wrap:wrap;">
             <button id="bj-hit" class="primary-btn">Hit</button>
             <button id="bj-stand" class="secondary-btn">Stand</button>
             <button id="bj-double" class="secondary-btn">Double</button>
@@ -28,16 +39,19 @@ const BlackjackGame = (() => {
             <button id="bj-surrender" class="secondary-btn">Surrender</button>
             <button id="bj-insurance" class="secondary-btn hidden">Insurance</button>
           </div>
+
+          <div id="bj-result" class="result-banner"></div>
+          <div id="bj-fairness" class="fairness-line"></div>
         </div>
 
-        <div id="bj-result" class="result-banner"></div>
-        <div id="bj-fairness"></div>
-      </div>
+      </div></div>
     `;
 
     const els = {
       table: container.querySelector("#bj-table"),
       amount: container.querySelector("#bj-amount"),
+      half: container.querySelector("#bj-half"),
+      dbl: container.querySelector("#bj-dbl"),
       dealRow: container.querySelector("#bj-deal-row"),
       actionRow: container.querySelector("#bj-action-row"),
       deal: container.querySelector("#bj-deal"),
@@ -50,6 +64,16 @@ const BlackjackGame = (() => {
       result: container.querySelector("#bj-result"),
       fairness: container.querySelector("#bj-fairness"),
     };
+
+    // ½ and 2× quick buttons
+    els.half.addEventListener("click", () => { els.amount.value = Math.max(1, Math.floor(Number(els.amount.value) * 0.5)); });
+    els.dbl.addEventListener("click", () => { els.amount.value = Math.floor(Number(els.amount.value) * 2); });
+
+    // Manual/Auto tabs (visual only)
+    container.querySelectorAll(".bp-tab").forEach(t => t.addEventListener("click", function() {
+      container.querySelectorAll(".bp-tab").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    }));
 
     const STATUS_LABEL = {
       playing: "Playing", stood: "Stood", bust: "Bust", blackjack: "Blackjack!",
