@@ -10,7 +10,7 @@
   <div id="auth-screen" class="screen">
     <div class="auth-card">
       <h1>🎰 Casino Aurelius</h1>
-      <p class="subtitle">Provably-fair games. Play money. $1,000 welcome bonus.</p>
+      <p class="subtitle">Provably-fair games. Play money. 1,000 chip welcome bonus.</p>
 
       <div class="tabs">
         <button class="tab active" data-tab="login">Log in</button>
@@ -27,7 +27,7 @@
         <input name="username" placeholder="Username (3-20 chars, letters/numbers/_)" autocomplete="username" required />
         <input name="email" type="email" placeholder="Email" autocomplete="email" required />
         <input name="password" type="password" placeholder="Password (8+ chars)" autocomplete="new-password" required />
-        <button type="submit">Create account &amp; claim $1,000</button>
+        <button type="submit">Create account &amp; claim 1,000 chips 🪙</button>
       </form>
 
       <p id="auth-error" class="error hidden"></p>
@@ -40,14 +40,13 @@
       <nav id="game-nav" class="game-nav"></nav>
       <div class="account">
         <div class="balance">
-          <span class="label">Balance</span>
-          <span id="balance-amount" class="amount">$0.00</span>
+          <span class="label">Chips 🪙</span>
+          <span id="balance-amount" class="amount">0</span>
         </div>
         <div class="level">
           <span class="label">Lvl <span id="user-level">1</span></span>
           <div class="xp-bar"><div id="xp-fill" class="xp-fill"></div></div>
         </div>
-        <button id="faucet-btn" class="ghost-btn" title="Top up if you're below $500">+ Faucet</button>
         <button id="logout-btn" class="ghost-btn">Log out</button>
       </div>
     </header>
@@ -73,6 +72,7 @@
   <script src="js/games/baccarat.js"></script>
   <script src="js/games/hilo.js"></script>
   <script src="js/games/videopoker.js"></script>
+  <script src="js/games/chipshop.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

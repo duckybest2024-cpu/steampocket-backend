@@ -13,6 +13,7 @@ model User {
   email         String   @unique
   passwordHash  String
   balance       Int      @default(100000) // balance stored in cents (e.g. 100000 = $1,000.00 starting bonus)
+  bank          Int      @default(0)      // "cashed out" chips stored here; players buy chips from bank to play
   level         Int      @default(1)
   xp            Int      @default(0)
   createdAt     DateTime @default(now())

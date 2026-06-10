@@ -12,11 +12,16 @@ import { rouletteRouter } from "./routes/games/roulette";
 import { slotsRouter } from "./routes/games/slots";
 import { hiloRouter } from "./routes/games/hilo";
 import { videoPokerRouter } from "./routes/games/videopoker";
+import { stripeWebhookHandler } from "./routes/stripeWebhook";
 
 export function createApp() {
   const app = express();
 
   app.use(cors());
+
+  // Stripe webhook must receive the raw body — register before express.json()
+  app.post("/wallet/stripe-webhook", express.raw({ type: "application/json" }), stripeWebhookHandler);
+
   app.use(express.json());
 
   app.get("/health", (_req, res) => res.json({ ok: true, name: "casino-aurelius", time: new Date().toISOString() }));

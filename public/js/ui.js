@@ -7,8 +7,10 @@ const UI = (() => {
   };
 
   function money(cents) {
+    const abs = Math.abs(cents) / 100;
     const sign = cents < 0 ? "-" : "";
-    return `${sign}$${(Math.abs(cents) / 100).toFixed(2)}`;
+    const formatted = abs % 1 === 0 ? abs.toFixed(0) : abs.toFixed(2);
+    return `${sign}${formatted} 🪙`;
   }
 
   function toast(message, kind = "info") {
@@ -25,7 +27,8 @@ const UI = (() => {
   }
 
   function setBalance(cents) {
-    document.getElementById("balance-amount").textContent = money(cents);
+    const chips = Math.floor(cents / 100);
+    document.getElementById("balance-amount").textContent = chips.toLocaleString();
   }
 
   function setLevel(level, xp) {
@@ -48,6 +51,7 @@ const UI = (() => {
       state.balance = patch.balance;
       setBalance(state.balance);
     }
+    if (patch.bank !== undefined) state.bank = patch.bank;
     if (patch.level !== undefined || patch.xp !== undefined) {
       state.level = patch.level ?? state.level;
       state.xp = patch.xp ?? state.xp;
