@@ -13,6 +13,9 @@ import { slotsRouter } from "./routes/games/slots";
 import { hiloRouter } from "./routes/games/hilo";
 import { videoPokerRouter } from "./routes/games/videopoker";
 import { stripeWebhookHandler } from "./routes/stripeWebhook";
+import { leaderboardRouter } from "./routes/leaderboard";
+import { friendsRouter } from "./routes/friends";
+import { adminRouter } from "./routes/admin";
 
 export function createApp() {
   const app = express();
@@ -41,6 +44,10 @@ export function createApp() {
   app.use("/games/slots", slotsRouter);
   app.use("/games/hilo", hiloRouter);
   app.use("/games/videopoker", videoPokerRouter);
+
+  app.use("/leaderboard", leaderboardRouter);
+  app.use("/friends", friendsRouter);
+  app.use("/admin", adminRouter);
 
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 

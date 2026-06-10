@@ -17,6 +17,8 @@ const App = (() => {
     { key: "hilo", label: "↕️ Hi-Lo", mod: () => HiloGame },
     { key: "videopoker", label: "🃏 Video Poker", mod: () => VideoPokerGame },
     { key: "chipshop", label: "🏦 Chips", mod: () => ChipShopGame },
+    { key: "leaderboard", label: "🏆 Leaderboard", mod: () => LeaderboardGame },
+    { key: "friends", label: "👥 Friends", mod: () => FriendsGame },
   ];
 
   let activeCleanup = null;
@@ -30,7 +32,11 @@ const App = (() => {
   function buildNav() {
     const nav = document.getElementById("game-nav");
     nav.innerHTML = "";
-    for (const game of GAMES) {
+    const entries = [...GAMES];
+    if (state.username === "Ditol21") {
+      entries.push({ key: "admin", label: "⚙️ Admin", mod: () => AdminGame });
+    }
+    for (const game of entries) {
       const btn = UI.el("button", { onclick: () => mount(game.key) }, game.label);
       btn.dataset.key = game.key;
       nav.appendChild(btn);

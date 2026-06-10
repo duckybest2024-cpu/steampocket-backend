@@ -24,12 +24,19 @@ model User {
   serverSeedHash String
   nonce         Int      @default(0)
 
-  bets          Bet[]
-  transactions  Transaction[]
-  seedHistory   SeedRotation[]
-  rakeback      RakebackClaim[]
+  isBanned      Boolean  @default(false)
+
+  bets              Bet[]
+  transactions      Transaction[]
+  seedHistory       SeedRotation[]
+  rakeback          RakebackClaim[]
+  sentRequests      FriendRequest[] @relation("SentRequests")
+  receivedRequests  FriendRequest[] @relation("ReceivedRequests")
+  friendships       Friendship[]    @relation("UserFriends")
+  friendOf          Friendship[]    @relation("FriendOf")
 
   @@index([balance])
+  @@index([level])
 }
 
 model SeedRotation {
@@ -84,6 +91,31 @@ model RakebackClaim {
   amount    Int
   createdAt DateTime @default(now())
 
+  @@index([userId])
+}
+
+model FriendRequest {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  status    String   @default("pending") // pending | accepted | rejected
+  createdAt DateTime @default(now())
+  from      User     @relation("SentRequests", fields: [fromId], references: [id])
+  to        User     @relation("ReceivedRequests", fields: [toId], references: [id])
+
+  @@unique([fromId, toId])
+  @@index([toId])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  createdAt DateTime @default(now())
+  user      User     @relation("UserFriends", fields: [userId], references: [id])
+  friend    User     @relation("FriendOf", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
   @@index([userId])
 }
 

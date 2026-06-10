@@ -883,3 +883,76 @@ body {
   .game-canvas { padding: 14px; }
   .stat-boxes { flex-wrap: wrap; }
 }
+
+/* ================================================================
+   LEADERBOARD
+   ================================================================ */
+.lb-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
+.lb-header h2 { margin:0; font-size:1.3rem; }
+.lb-rank-badge { background:rgba(111,92,242,0.15); border:1px solid var(--accent); color:var(--accent-2); padding:5px 14px; border-radius:999px; font-size:0.85rem; font-weight:700; }
+.lb-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+.lb-table th { text-align:left; padding:8px 12px; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); border-bottom:1px solid var(--border); }
+.lb-table td { padding:10px 12px; border-bottom:1px solid var(--border); }
+.lb-table tr:last-child td { border-bottom:none; }
+.lb-table tr:hover td { background:rgba(255,255,255,0.02); }
+.lb-table tr.lb-me td { background:rgba(111,92,242,0.1); }
+.lb-rank { font-weight:800; font-size:1rem; min-width:36px; display:inline-block; }
+.lb-username { font-weight:700; }
+.lb-chips { color:var(--gold); font-weight:800; }
+.lb-level { color:var(--accent-2); font-weight:700; }
+
+/* ================================================================
+   FRIENDS
+   ================================================================ */
+.friends-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:18px; }
+.friends-tab { padding:10px 18px; background:transparent; border:none; color:var(--text-dim); font-weight:700; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+.friends-tab.active { color:var(--accent-2); border-bottom-color:var(--accent-2); }
+.friends-tab .badge { background:var(--accent); color:white; font-size:0.65rem; font-weight:800; padding:1px 6px; border-radius:999px; margin-left:5px; vertical-align:middle; }
+.friend-row { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-elev); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; }
+.friend-info { display:flex; flex-direction:column; gap:2px; }
+.friend-name { font-weight:700; font-size:0.92rem; }
+.friend-meta { font-size:0.75rem; color:var(--text-dim); }
+.friend-actions { display:flex; gap:8px; }
+.friend-btn { padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text-dim); font-size:0.8rem; font-weight:700; cursor:pointer; }
+.friend-btn:hover { border-color:var(--accent-2); color:var(--text); }
+.friend-btn.accept { border-color:var(--win); color:var(--win); }
+.friend-btn.accept:hover { background:rgba(52,211,153,0.12); }
+.friend-btn.danger { border-color:var(--loss); color:var(--loss); }
+.friend-btn.danger:hover { background:rgba(248,113,113,0.12); }
+.add-friend-form { display:flex; gap:8px; margin-bottom:14px; }
+.add-friend-form input { flex:1; background:var(--bg-elev); border:1px solid var(--border); color:var(--text); padding:10px 14px; border-radius:10px; font-size:0.95rem; }
+.add-friend-form input:focus { outline:none; border-color:var(--accent); }
+.friends-empty { color:var(--text-dim); font-size:0.88rem; text-align:center; padding:32px 0; }
+
+/* ================================================================
+   ADMIN PANEL
+   ================================================================ */
+.admin-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:20px; flex-wrap:wrap; }
+.admin-tab { padding:10px 18px; background:transparent; border:none; color:var(--text-dim); font-weight:700; font-size:0.88rem; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+.admin-tab.active { color:var(--accent-2); border-bottom-color:var(--accent-2); }
+.admin-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:20px; }
+.admin-stat-card { background:var(--bg-elev); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.admin-stat-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); margin-bottom:5px; }
+.admin-stat-value { font-size:1.4rem; font-weight:900; color:var(--text); }
+.admin-search { display:flex; gap:8px; margin-bottom:14px; }
+.admin-search input { flex:1; background:var(--bg-elev); border:1px solid var(--border); color:var(--text); padding:10px 14px; border-radius:10px; font-size:0.9rem; }
+.admin-search input:focus { outline:none; border-color:var(--accent); }
+.admin-table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+.admin-table th { text-align:left; padding:8px 10px; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-dim); border-bottom:1px solid var(--border); white-space:nowrap; }
+.admin-table td { padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.admin-table tr:last-child td { border-bottom:none; }
+.admin-table tr.banned td { opacity:0.55; }
+.admin-action-btn { padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text-dim); font-size:0.75rem; font-weight:700; cursor:pointer; }
+.admin-action-btn:hover { border-color:var(--accent-2); color:var(--text); }
+.admin-action-btn.ban { border-color:var(--loss); color:var(--loss); }
+.admin-action-btn.unban { border-color:var(--win); color:var(--win); }
+.admin-action-btn.delete { border-color:var(--loss); color:var(--loss); }
+.admin-form { display:flex; flex-direction:column; gap:12px; max-width:420px; }
+.admin-form label { font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; }
+.admin-form input, .admin-form textarea { background:var(--bg-elev); border:1px solid var(--border); color:var(--text); padding:10px 14px; border-radius:10px; font-size:0.95rem; width:100%; }
+.admin-form input:focus, .admin-form textarea:focus { outline:none; border-color:var(--accent); }
+.danger-zone { background:rgba(248,113,113,0.07); border:1px solid rgba(248,113,113,0.35); border-radius:12px; padding:20px; }
+.danger-zone h3 { margin:0 0 12px; color:var(--loss); }
+.admin-pagination { display:flex; align-items:center; gap:10px; margin-top:14px; font-size:0.85rem; color:var(--text-dim); }
+.admin-pagination button { padding:5px 12px; background:var(--bg-elev); border:1px solid var(--border); border-radius:8px; color:var(--text); cursor:pointer; font-size:0.82rem; }
+.admin-pagination button:disabled { opacity:0.4; cursor:not-allowed; }
