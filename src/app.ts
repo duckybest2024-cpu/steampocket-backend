@@ -21,6 +21,9 @@ import { settingsRouter } from "./routes/settings";
 export function createApp() {
   const app = express();
 
+  // Trust Railway's reverse proxy so req.protocol returns "https" correctly
+  app.set("trust proxy", 1);
+
   app.use(cors());
 
   // Stripe webhook must receive the raw body — register before express.json()

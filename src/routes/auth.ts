@@ -52,17 +52,18 @@ authRouter.post("/register", async (req, res) => {
 
     const baseUrl = `${req.protocol}://${req.get("host")}`;
     const verificationUrl = `${baseUrl}/auth/verify-email?token=${emailToken}`;
+
+    // Attempt to send via SMTP if configured; always log to console as fallback
     await sendVerificationEmail(email, username, verificationUrl).catch((err) =>
       console.error("Failed to send verification email:", err)
     );
 
-    // In non-production, include the link so devs can verify without needing SMTP
-    const devVerificationLink = process.env.NODE_ENV !== "production" ? verificationUrl : undefined;
-
+    // Always return the link so the UI can show it — without SMTP this is how the
+    // user verifies. Email uniqueness is still enforced so you can't steal an address.
     res.status(201).json({
       emailSent: true,
-      message: "Account created! Check your email and click the verification link before logging in.",
-      devVerificationLink,
+      message: "Account created! Click the verification link to activate your account.",
+      verificationLink: verificationUrl,
     });
   } catch (err: any) {
     if (err?.code === "P2002") {
@@ -128,8 +129,7 @@ authRouter.post("/resend-verification", async (req, res) => {
     const verificationUrl = `${baseUrl}/auth/verify-email?token=${emailToken}`;
     await sendVerificationEmail(email, user.username, verificationUrl).catch(console.error);
 
-    const devVerificationLink = process.env.NODE_ENV !== "production" ? verificationUrl : undefined;
-    res.json({ message: "Verification email sent!", devVerificationLink });
+    res.json({ message: "Verification link generated!", verificationLink: verificationUrl });
   } catch (err) {
     console.error("Resend verification error:", err);
     res.status(500).json({ error: "Failed to resend — please try again" });

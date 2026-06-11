@@ -128,38 +128,44 @@ const App = (() => {
     }
   }
 
-  function showVerifyEmailUI(email, devLink) {
+  function showVerifyEmailUI(email, verificationLink) {
     const errorEl = document.getElementById("auth-error");
     errorEl.innerHTML = `
-      <div style="text-align:left;line-height:1.6;">
-        <strong>📧 Check your email!</strong><br/>
-        A verification link was sent to <strong>${email}</strong>.<br/>
-        Click it to activate your account, then log in.
-        ${devLink ? `<br/><br/><strong>Dev link:</strong> <a href="${devLink}" style="color:#6f5cf2;word-break:break-all;">${devLink}</a>` : ""}
+      <div style="text-align:left;line-height:1.7;">
+        <strong>📧 One more step — verify your email</strong><br/>
+        ${verificationLink
+          ? `<a href="${verificationLink}"
+               style="display:inline-block;margin:10px 0;background:#6f5cf2;color:white;padding:9px 20px;border-radius:8px;text-decoration:none;font-weight:700;">
+               ✅ Click here to verify your account
+             </a><br/>`
+          : `A verification link was sent to <strong>${email}</strong>.<br/>`}
+        After verifying, come back here and log in.
         <br/><br/>
         <button id="resend-btn" style="background:transparent;border:1px solid rgba(111,92,242,0.5);color:#6f5cf2;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;">
-          Resend verification email
+          Get a new verification link
         </button>
+        <div id="resend-result" style="margin-top:8px;font-size:0.82rem;"></div>
       </div>`;
     errorEl.classList.remove("hidden");
     errorEl.style.color = "var(--text)";
 
     document.getElementById("resend-btn").addEventListener("click", async () => {
       const btn = document.getElementById("resend-btn");
-      btn.disabled = true; btn.textContent = "Sending…";
+      const resultEl = document.getElementById("resend-result");
+      btn.disabled = true; btn.textContent = "Getting link…";
       try {
         const data = await Api.post("/auth/resend-verification", { email });
-        btn.textContent = "Sent!";
-        if (data.devVerificationLink) {
-          errorEl.querySelector("strong:last-of-type")?.remove();
-          const a = document.createElement("a");
-          a.href = data.devVerificationLink;
-          a.style.cssText = "color:#6f5cf2;word-break:break-all;display:block;margin-top:8px;font-size:0.82rem;";
-          a.textContent = data.devVerificationLink;
-          errorEl.appendChild(a);
+        btn.textContent = "Done!";
+        if (data.verificationLink) {
+          resultEl.innerHTML = `<a href="${data.verificationLink}"
+            style="color:#6f5cf2;font-weight:700;text-decoration:underline;">
+            Click here to verify →
+          </a>`;
+        } else {
+          resultEl.textContent = "Link sent! Check your email.";
         }
       } catch (err) {
-        btn.textContent = "Resend verification email";
+        btn.textContent = "Get a new verification link";
         btn.disabled = false;
         UI.toast(err.message || "Failed to resend.", "loss");
       }
@@ -221,7 +227,7 @@ const App = (() => {
         });
         // Registration no longer returns a token — user must verify email first
         if (data.emailSent) {
-          showVerifyEmailUI(emailVal, data.devVerificationLink);
+          showVerifyEmailUI(emailVal, data.verificationLink);
         } else if (data.token) {
           // Legacy path (should not happen with new backend)
           Api.setToken(data.token);

@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+import { prisma } from "./prisma";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -17,19 +18,25 @@ const HOUSE_DEBIT_TYPES = new Set([
   "levelup_bonus", "rakeback", "free_chips", "deposit",
 ]);
 
-/** Update house chip reserve. fire-and-forget — never throws. */
-async function updateHouseChips(db: Db, chipsChange: number, dollarsChange = 0): Promise<void> {
+/**
+ * Update house chip reserve using the GLOBAL prisma client — intentionally NOT
+ * the transaction-scoped db so this write never contends with game transactions.
+ * SQLite has file-level locking; running houseBank writes inside crash-game
+ * transactions causes SQLITE_BUSY errors when many bets land simultaneously.
+ * Fire-and-forget: failures are logged but never surface to callers.
+ */
+async function updateHouseChips(chipsChange: number, dollarsChange = 0): Promise<void> {
   if (chipsChange === 0 && dollarsChange === 0) return;
-  const updateData: Record<string, unknown> = {};
+  const updateData: Partial<{ chips: { increment: number }; dollars: { increment: number } }> = {};
   if (chipsChange !== 0) updateData.chips = { increment: chipsChange };
   if (dollarsChange !== 0) updateData.dollars = { increment: dollarsChange };
-  await (db as PrismaClient).houseBank
+  await prisma.houseBank
     .upsert({
       where: { id: "singleton" },
       create: { id: "singleton", chips: 1_000_000_000 + chipsChange, dollars: 1_000_000_000 + dollarsChange },
       update: updateData,
     })
-    .catch((err: unknown) => console.error("House bank update failed (non-fatal):", err));
+    .catch((err: unknown) => console.error("House bank update (non-fatal):", err));
 }
 
 export { updateHouseChips };
@@ -56,20 +63,14 @@ export async function applyLedgerEntry(
   });
 
   await db.transaction.create({
-    data: {
-      userId,
-      type,
-      amount: delta,
-      balance: nextBalance,
-      reference,
-    },
+    data: { userId, type, amount: delta, balance: nextBalance, reference },
   });
 
-  // Keep house bank chips in sync with game results
+  // House bank update — fire-and-forget, uses global prisma (outside the transaction)
   if (HOUSE_CREDIT_TYPES.has(type)) {
-    await updateHouseChips(db, Math.abs(delta));
+    void updateHouseChips(Math.abs(delta));
   } else if (HOUSE_DEBIT_TYPES.has(type)) {
-    await updateHouseChips(db, -Math.abs(delta));
+    void updateHouseChips(-Math.abs(delta));
   }
 
   return updated;

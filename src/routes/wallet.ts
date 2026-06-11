@@ -158,7 +158,7 @@ walletRouter.post("/buy-chips", requireAuth, async (req: AuthedRequest, res) => 
     });
 
     // Moving from player bank → playing chips: house loses chips, gains dollars
-    await updateHouseChips(prisma, -amount, amount).catch(() => {});
+    void updateHouseChips(-amount, amount);
 
     res.json({ balance: updated.balance, bank: updated.bank });
   } catch (err) {
@@ -187,7 +187,7 @@ walletRouter.post("/cashout-chips", requireAuth, async (req: AuthedRequest, res)
     });
 
     // Moving from playing chips → player bank: house gains chips, loses dollars
-    await updateHouseChips(prisma, amount, -amount).catch(() => {});
+    void updateHouseChips(amount, -amount);
 
     res.json({ balance: updated.balance, bank: updated.bank, cashedOut: amount });
   } catch (err) {
