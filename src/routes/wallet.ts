@@ -134,7 +134,10 @@ walletRouter.post("/create-checkout-session", requireAuth, async (req: AuthedReq
 // LiqPay checkout — create a form submission payload for a chip package
 // ---------------------------------------------------------------------------
 
-const liqpayCheckoutSchema = z.object({ packageId: z.string() });
+const liqpayCheckoutSchema = z.object({
+  packageId: z.string(),
+  currency: z.enum(["USD", "UAH"]).default("USD"),
+});
 
 walletRouter.post("/liqpay-checkout", requireAuth, async (req: AuthedRequest, res) => {
   try {
@@ -148,18 +151,24 @@ walletRouter.post("/liqpay-checkout", requireAuth, async (req: AuthedRequest, re
     const parsed = liqpayCheckoutSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
+    const { currency } = parsed.data;
     const pkg = CHIP_PACKAGES.find((p) => p.id === parsed.data.packageId);
     if (!pkg) return res.status(400).json({ error: "Invalid package" });
 
     const origin = `${req.protocol}://${req.get("host")}`;
-    // orderId encodes userId + packageId so callback can credit chips without a DB lookup
     const orderId = `${req.userId!}_${pkg.id}_${Date.now()}`;
     const sandbox = process.env.LIQPAY_SANDBOX === "true";
+
+    // Use UAH price if requested (priceUAH exists on all packages)
+    const amountSmallest = currency === "UAH"
+      ? (pkg as typeof pkg & { priceUAH?: number }).priceUAH ?? pkg.priceCents * 41
+      : pkg.priceCents;
 
     const { data, signature } = buildLiqpayCheckout({
       publicKey: keys.publicKey,
       privateKey: keys.privateKey,
-      amountCents: pkg.priceCents,
+      amountSmallest,
+      currency,
       description: `${pkg.name} — ${pkg.chips.toLocaleString()} Casino Aurelius chips`,
       orderId,
       serverUrl: `${origin}/wallet/liqpay-callback`,

@@ -1,13 +1,21 @@
 const ChipShopGame = (() => {
   const PACKAGES = [
-    { id: "starter",    chips: 100,   priceCents: 100,  name: "Starter Pack",  emoji: "🟡", badge: "Intro",      saving: null },
-    { id: "regular",    chips: 500,   priceCents: 400,  name: "Regular Pack",  emoji: "🔴", badge: "20% off",    saving: "save $1" },
-    { id: "pro",        chips: 1000,  priceCents: 700,  name: "Pro Pack",      emoji: "💜", badge: "30% off",    saving: "save $3" },
-    { id: "highroller", chips: 5000,  priceCents: 3000, name: "High Roller",   emoji: "⚫", badge: "Best value", saving: "save $20" },
+    { id: "micro",      chips: 50,    priceCents: 50,    priceUAH: 2000,   name: "Micro Pack",    emoji: "🔵", badge: "Try it",     saving: null },
+    { id: "starter",    chips: 100,   priceCents: 100,   priceUAH: 4100,   name: "Starter Pack",  emoji: "🟡", badge: "Best intro", saving: null },
+    { id: "regular",    chips: 500,   priceCents: 400,   priceUAH: 16400,  name: "Regular Pack",  emoji: "🔴", badge: "20% off",    saving: "save $0.60" },
+    { id: "pro",        chips: 1000,  priceCents: 700,   priceUAH: 28700,  name: "Pro Pack",      emoji: "💜", badge: "30% off",    saving: "save $3" },
+    { id: "vip",        chips: 2500,  priceCents: 1500,  priceUAH: 61500,  name: "VIP Pack",      emoji: "🟣", badge: "40% off",    saving: "save $10" },
+    { id: "highroller", chips: 5000,  priceCents: 2500,  priceUAH: 102500, name: "High Roller",   emoji: "⚫", badge: "Best value", saving: "save $25" },
+    { id: "whale",      chips: 15000, priceCents: 6000,  priceUAH: 246000, name: "Whale Pack",    emoji: "🔷", badge: "50% off",    saving: "save $90" },
+    { id: "diamond",    chips: 50000, priceCents: 15000, priceUAH: 615000, name: "Diamond Pack",  emoji: "💎", badge: "Max value",  saving: "save $350" },
   ];
 
-  function usd(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
+  let selectedCurrency = localStorage.getItem("casino_currency") || "USD";
+
+  function usd(cents) { return `$${(cents / 100).toFixed(2)}`; }
+  function uah(kopecks) { return `₴${(kopecks / 100).toFixed(0)}`; }
+  function formatPrice(pkg) {
+    return selectedCurrency === "UAH" ? uah(pkg.priceUAH) : usd(pkg.priceCents);
   }
 
   function render(container, accountState) {
@@ -46,12 +54,17 @@ const ChipShopGame = (() => {
 
           <!-- LiqPay card purchase -->
           <div class="chip-section stripe-section">
-            <div class="stripe-header">
+            <div class="stripe-header" style="flex-wrap:wrap;gap:8px">
               <h3>💳 Buy Chips with Card</h3>
-              <span class="stripe-badge" style="background:rgba(0,160,255,0.15);color:#40b3ff;border-color:rgba(0,160,255,0.4)">LiqPay</span>
+              <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+                <span style="font-size:0.78rem;color:var(--text-dim)">Currency:</span>
+                <button id="curr-usd" class="secondary-btn" style="padding:4px 12px;font-size:0.8rem;${selectedCurrency==="USD"?"border-color:var(--accent);color:var(--accent)":""}">$ USD</button>
+                <button id="curr-uah" class="secondary-btn" style="padding:4px 12px;font-size:0.8rem;${selectedCurrency==="UAH"?"border-color:var(--accent);color:var(--accent)":""}">₴ UAH</button>
+                <span class="stripe-badge" style="background:rgba(0,160,255,0.15);color:#40b3ff;border-color:rgba(0,160,255,0.4)">LiqPay</span>
+              </div>
             </div>
             <p class="chip-section-hint">
-              Pay securely via LiqPay — Visa, Mastercard, and Ukrainian cards accepted.
+              Pay securely via LiqPay — Visa, Mastercard, Privat24, monobank and all Ukrainian cards.
               Chips are credited instantly after payment is confirmed.
             </p>
             <div class="buy-packages">
@@ -63,7 +76,7 @@ const ChipShopGame = (() => {
                   </div>
                   <div class="pkg-name">${p.name}</div>
                   <div class="pkg-chips">${p.chips.toLocaleString()} 🪙</div>
-                  <div class="pkg-price">${usd(p.priceCents)}</div>
+                  <div class="pkg-price pkg-price-display" data-usd="${usd(p.priceCents)}" data-uah="${uah(p.priceUAH)}">${formatPrice(p)}</div>
                   <button class="liqpay-buy-btn" data-id="${p.id}">Buy now</button>
                 </div>
               `).join("")}
@@ -130,6 +143,20 @@ const ChipShopGame = (() => {
         </div>
       `;
 
+      // Currency toggle
+      const usdBtn = container.querySelector("#curr-usd");
+      const uahBtn = container.querySelector("#curr-uah");
+      function setCurrency(cur) {
+        selectedCurrency = cur;
+        localStorage.setItem("casino_currency", cur);
+        [usdBtn, uahBtn].forEach(b => b && (b.style.borderColor = b.id === `curr-${cur.toLowerCase()}` ? "var(--accent)" : "var(--border)", b.style.color = b.id === `curr-${cur.toLowerCase()}` ? "var(--accent)" : "var(--text-dim)"));
+        container.querySelectorAll(".pkg-price-display").forEach(el => {
+          el.textContent = cur === "UAH" ? el.dataset.uah : el.dataset.usd;
+        });
+      }
+      if (usdBtn) usdBtn.addEventListener("click", () => setCurrency("USD"));
+      if (uahBtn) uahBtn.addEventListener("click", () => setCurrency("UAH"));
+
       // LiqPay buy buttons — get signed payload from server, then submit form to LiqPay
       container.querySelectorAll(".liqpay-buy-btn").forEach((btn) => {
         btn.addEventListener("click", async () => {
@@ -137,8 +164,7 @@ const ChipShopGame = (() => {
           btn.disabled = true;
           btn.textContent = "Loading…";
           try {
-            const { data, signature, checkoutUrl } = await Api.post("/wallet/liqpay-checkout", { packageId: pkgId });
-            // Submit form to LiqPay's hosted checkout page
+            const { data, signature, checkoutUrl } = await Api.post("/wallet/liqpay-checkout", { packageId: pkgId, currency: selectedCurrency });
             const form = document.createElement("form");
             form.method = "POST";
             form.action = checkoutUrl;

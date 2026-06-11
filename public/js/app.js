@@ -41,6 +41,7 @@ const App = (() => {
       section: "Account",
       items: [
         { key: "nfts",        icon: "🖼️", label: "NFT Collection",   mod: () => NFTsGame },
+        { key: "nftmarket",   icon: "🏪", label: "NFT Marketplace",  mod: () => NFTMarketGame },
         { key: "chipshop",    icon: "🏦", label: "Chip Shop",         mod: () => ChipShopGame },
         { key: "leaderboard", icon: "🏆", label: "Leaderboard",       mod: () => LeaderboardGame },
         { key: "friends",     icon: "👥", label: "Friends",           mod: () => FriendsGame },

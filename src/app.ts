@@ -18,6 +18,7 @@ import { friendsRouter } from "./routes/friends";
 import { adminRouter } from "./routes/admin";
 import { settingsRouter } from "./routes/settings";
 import { nftRouter } from "./routes/nfts";
+import { nftMarketRouter } from "./routes/nftmarket";
 import { prisma } from "./lib/prisma";
 import { getLiqpayKeys, verifyLiqpayCallback, liqpayDecode } from "./lib/liqpay";
 import { CHIP_PACKAGES } from "./lib/stripe";
@@ -105,6 +106,7 @@ export function createApp() {
   app.use("/friends", friendsRouter);
   app.use("/admin", adminRouter);
   app.use("/nfts", nftRouter);
+  app.use("/nftmarket", nftMarketRouter);
 
   // Public site config + active broadcasts
   app.get("/config", async (_req, res) => {

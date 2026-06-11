@@ -214,6 +214,24 @@ model SiteConfig {
   updatedAt DateTime @updatedAt
 }
 
+model NftSupply {
+  templateId String @id
+  minted     Int    @default(0)
+}
+
+model ActiveBuff {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    // chips_bonus | xp_bonus | jackpot_entry | free_spin | multiplier_boost
+  value     Float     @default(1.0)
+  betsLeft  Int       @default(0)
+  expiresAt DateTime?
+  nftId     String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
 model PromoCode {
   id          String   @id @default(cuid())
   code        String   @unique

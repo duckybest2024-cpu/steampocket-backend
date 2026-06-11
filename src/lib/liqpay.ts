@@ -31,8 +31,10 @@ export function verifyLiqpayCallback(privateKey: string, data: string, signature
 export interface LiqpayPaymentParams {
   publicKey: string;
   privateKey: string;
-  /** Amount in USD cents — will be converted to dollars */
-  amountCents: number;
+  /** Amount in the smallest unit of the currency (cents for USD, kopecks for UAH) */
+  amountSmallest: number;
+  /** Currency code: "USD" | "UAH" | "EUR" */
+  currency?: string;
   description: string;
   orderId: string;
   serverUrl: string;
@@ -41,12 +43,13 @@ export interface LiqpayPaymentParams {
 }
 
 export function buildLiqpayCheckout(p: LiqpayPaymentParams): { data: string; signature: string } {
+  const currency = p.currency ?? "USD";
   const obj: Record<string, unknown> = {
     version: 3,
     public_key: p.publicKey,
     action: "pay",
-    amount: (p.amountCents / 100).toFixed(2),
-    currency: "USD",
+    amount: (p.amountSmallest / 100).toFixed(2),
+    currency,
     description: p.description,
     order_id: p.orderId,
     server_url: p.serverUrl,

@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS "NftSupply" (
+  "templateId" TEXT NOT NULL PRIMARY KEY,
+  "minted" INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS "ActiveBuff" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL,
+  "type" TEXT NOT NULL,
+  "value" REAL NOT NULL DEFAULT 1.0,
+  "betsLeft" INTEGER NOT NULL DEFAULT 0,
+  "expiresAt" DATETIME,
+  "nftId" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "ActiveBuff_userId_idx" ON "ActiveBuff"("userId");
