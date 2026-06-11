@@ -111,6 +111,22 @@ const ChipShopGame = (() => {
               </button>
             </div>
           </div>
+
+          <!-- Promo code -->
+          <div class="chip-section">
+            <h3>🎫 Promo Code</h3>
+            <p class="chip-section-hint">Have a promo code? Enter it below to claim free chips.</p>
+            <div class="controls-row">
+              <div class="field">
+                <label>Promo Code</label>
+                <input type="text" id="promo-code-input" placeholder="EXAMPLE2024" style="text-transform:uppercase" />
+              </div>
+              <div class="btn-row" style="align-items:flex-end">
+                <button id="promo-redeem-btn" class="primary-btn">Redeem</button>
+              </div>
+            </div>
+            <div id="promo-result" style="font-size:0.85rem;margin-top:8px"></div>
+          </div>
         </div>
       `;
 
@@ -205,6 +221,48 @@ const ChipShopGame = (() => {
           } catch (err) {
             UI.toast(err.message, "loss");
             faucetBtn.disabled = false;
+          }
+        });
+      }
+
+      // Promo code redemption
+      const promoInput = container.querySelector("#promo-code-input");
+      const promoRedeemBtn = container.querySelector("#promo-redeem-btn");
+      const promoResult = container.querySelector("#promo-result");
+      if (promoInput) {
+        promoInput.addEventListener("input", () => {
+          promoInput.value = promoInput.value.toUpperCase();
+        });
+      }
+      if (promoRedeemBtn) {
+        promoRedeemBtn.addEventListener("click", async () => {
+          const code = (promoInput ? promoInput.value.trim().toUpperCase() : "");
+          if (!code) {
+            if (promoResult) { promoResult.style.color = "var(--loss)"; promoResult.textContent = "Enter a promo code."; }
+            return;
+          }
+          promoRedeemBtn.disabled = true;
+          promoRedeemBtn.textContent = "Redeeming…";
+          if (promoResult) promoResult.textContent = "";
+          try {
+            const res = await Api.post("/wallet/promo/redeem", { code });
+            if (promoResult) {
+              promoResult.style.color = "var(--win)";
+              promoResult.textContent = res.message || `Redeemed! ${Math.floor((res.chips || 0) / 100)} chips added.`;
+            }
+            accountState.balance = res.balance;
+            UI.setBalance(res.balance);
+            UI.toast(res.message || "Promo code redeemed!", "win");
+            if (typeof App !== "undefined" && App.refreshAccount) App.refreshAccount();
+            rebuild();
+          } catch (err) {
+            if (promoResult) {
+              promoResult.style.color = "var(--loss)";
+              promoResult.textContent = err.message || "Failed to redeem code.";
+            }
+            UI.toast(err.message || "Failed to redeem.", "loss");
+            promoRedeemBtn.disabled = false;
+            promoRedeemBtn.textContent = "Redeem";
           }
         });
       }
