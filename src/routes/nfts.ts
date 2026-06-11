@@ -168,6 +168,43 @@ nftRouter.post("/trade/:id/accept", requireAuth, async (req: AuthedRequest, res)
   }
 });
 
+// --------------- Custom drawn NFT minting ---------------
+
+const mintDrawingSchema = z.object({
+  name: z.string().min(1).max(40),
+  description: z.string().max(200).default(""),
+  imageData: z.string().min(1).max(600_000), // base64 PNG, ~450KB max
+});
+
+nftRouter.post("/mint-drawing", requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = mintDrawingSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const { name, description, imageData } = parsed.data;
+
+  if (!imageData.startsWith("data:image/png;base64,") && !imageData.startsWith("data:image/jpeg;base64,")) {
+    return res.status(400).json({ error: "imageData must be a PNG or JPEG data URL" });
+  }
+
+  try {
+    const nft = await prisma.nft.create({
+      data: {
+        ownerId: req.userId!,
+        name,
+        description: description || "Custom hand-drawn NFT",
+        rarity: "common",
+        category: "custom",
+        emoji: "🎨",
+        customImage: imageData,
+      },
+    });
+    res.json({ nft });
+  } catch (err) {
+    console.error("Mint drawing error:", err);
+    res.status(500).json({ error: "Failed to mint NFT" });
+  }
+});
+
 nftRouter.post("/trade/:id/decline", requireAuth, async (req: AuthedRequest, res) => {
   const offer = await prisma.tradeOffer.findUnique({ where: { id: req.params.id } });
   if (!offer) return res.status(404).json({ error: "Not found" });

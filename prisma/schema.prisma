@@ -161,8 +161,9 @@ model Nft {
   name        String
   description String
   rarity      String   // common | uncommon | rare | epic | legendary
-  category    String   // win | level | first | streak | special
+  category    String   // win | level | first | streak | special | custom
   emoji       String
+  customImage String?  // base64 data URL for user-drawn NFTs
   mintedAt    DateTime @default(now())
   tradeItems  TradeOfferItem[]
 

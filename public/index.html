@@ -7,52 +7,116 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
+
+  <!-- ═══════════════════════ AUTH SCREEN ═══════════════════════ -->
   <div id="auth-screen" class="screen">
-    <div class="auth-card">
-      <h1>🎰 Casino Aurelius</h1>
-      <p class="subtitle">Provably-fair games. Play money. 1,000 chip welcome bonus.</p>
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <span class="auth-logo-icon">🎰</span>
+          <div>
+            <div class="auth-logo-name">Casino Aurelius</div>
+            <div class="auth-logo-sub">Provably fair · 1,000 chip welcome bonus</div>
+          </div>
+        </div>
 
-      <div class="tabs">
-        <button class="tab active" data-tab="login">Log in</button>
-        <button class="tab" data-tab="register">Sign up</button>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login">Log in</button>
+          <button class="auth-tab" data-tab="register">Sign up</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <div class="auth-field">
+            <label>Username or email</label>
+            <input name="identifier" placeholder="Enter username or email" autocomplete="username" required />
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <input name="password" type="password" placeholder="Enter password" autocomplete="current-password" required />
+          </div>
+          <button type="submit" class="auth-submit">Log in</button>
+        </form>
+
+        <form id="register-form" class="auth-form hidden">
+          <div class="auth-field">
+            <label>Username</label>
+            <input name="username" placeholder="3–20 chars, letters/numbers/_" autocomplete="username" required />
+          </div>
+          <div class="auth-field">
+            <label>Email</label>
+            <input name="email" type="email" placeholder="your@email.com" autocomplete="email" required />
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <input name="password" type="password" placeholder="8+ characters" autocomplete="new-password" required />
+          </div>
+          <button type="submit" class="auth-submit">Create Account &amp; Claim 1,000 🪙</button>
+        </form>
+
+        <p id="auth-error" class="auth-error hidden"></p>
       </div>
-
-      <form id="login-form" class="auth-form">
-        <input name="identifier" placeholder="Username or email" autocomplete="username" required />
-        <input name="password" type="password" placeholder="Password" autocomplete="current-password" required />
-        <button type="submit">Log in</button>
-      </form>
-
-      <form id="register-form" class="auth-form hidden">
-        <input name="username" placeholder="Username (3-20 chars, letters/numbers/_)" autocomplete="username" required />
-        <input name="email" type="email" placeholder="Email" autocomplete="email" required />
-        <input name="password" type="password" placeholder="Password (8+ chars)" autocomplete="new-password" required />
-        <button type="submit">Create account &amp; claim 1,000 chips 🪙</button>
-      </form>
-
-      <p id="auth-error" class="error hidden"></p>
     </div>
   </div>
 
+  <!-- ═══════════════════════ APP SCREEN ═══════════════════════ -->
   <div id="app-screen" class="screen hidden">
-    <header class="topbar">
-      <div class="brand">🎰 Casino Aurelius</div>
-      <nav id="game-nav" class="game-nav"></nav>
-      <div class="account">
-        <div class="balance">
-          <span class="label">Chips 🪙</span>
-          <span id="balance-amount" class="amount">0</span>
-        </div>
-        <div class="level">
-          <span class="label">Lvl <span id="user-level">1</span></span>
-          <div class="xp-bar"><div id="xp-fill" class="xp-fill"></div></div>
-        </div>
-        <button id="logout-btn" class="ghost-btn">Log out</button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <span class="sidebar-logo-icon">🎰</span>
+        <span class="sidebar-logo-text">Casino Aurelius</span>
+        <button class="sidebar-close" id="sidebar-close">✕</button>
       </div>
-    </header>
 
-    <main id="game-area"></main>
+      <div class="sidebar-search">
+        <input type="text" id="sidebar-search" placeholder="🔍  Search games…" />
+      </div>
 
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- Populated by JS -->
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-balance">
+          <span class="sb-bal-label">Balance</span>
+          <span id="balance-amount" class="sb-bal-amount">0 🪙</span>
+        </div>
+        <div class="sb-level-row">
+          <span id="user-level-label" class="sb-level-label">Level 1</span>
+          <div class="sb-xp-bar"><div id="xp-fill" class="sb-xp-fill"></div></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay for mobile sidebar -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Main area -->
+    <div class="main-area" id="main-area">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <button class="topbar-menu" id="menu-toggle" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+
+        <div class="topbar-center" id="topbar-breadcrumb">Casino Aurelius</div>
+
+        <div class="topbar-right">
+          <div class="topbar-balance">
+            <span class="tb-chips-icon">🪙</span>
+            <span id="topbar-balance" class="tb-amount">0</span>
+          </div>
+          <button id="logout-btn" class="topbar-logout">Log out</button>
+        </div>
+      </header>
+
+      <!-- Game content -->
+      <main id="game-area"></main>
+    </div>
+
+    <!-- Toast stack -->
     <div id="toast-stack" class="toast-stack"></div>
   </div>
 
