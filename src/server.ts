@@ -4,6 +4,15 @@ import { createApp } from "./app";
 import { config } from "./lib/config";
 import { CrashEngine } from "./sockets/crashEngine";
 
+// Keep the process alive on unexpected errors — log them so they show up in
+// the host's deploy logs instead of crash-looping the whole service.
+process.on("uncaughtException", (err) => {
+  console.error("FATAL uncaughtException (continuing):", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("FATAL unhandledRejection (continuing):", reason);
+});
+
 const app = createApp();
 const httpServer = http.createServer(app);
 
