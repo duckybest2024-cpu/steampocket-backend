@@ -179,8 +179,8 @@ const AdminGame = (() => {
           tableBody.innerHTML = `<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--text-dim);">No users found.</td></tr>`;
         } else {
           tableBody.innerHTML = users.map((u) => {
-            const rankKey = u.username === "Ditol21" ? "owner" : (u.rank || "bronze");
-            const isOwner = u.username === "Ditol21";
+            const isOwner = (u.username || "").toLowerCase() === "ditol21";
+            const rankKey = isOwner ? "owner" : (u.rank || "bronze");
             const rankSelectHtml = isOwner
               ? `<span style="color:var(--accent-2);font-weight:700;font-size:0.8rem;">👑 Owner</span>`
               : `<select class="adm-rank-select" data-id="${u.id}"

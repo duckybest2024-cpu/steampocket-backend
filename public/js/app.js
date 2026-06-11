@@ -34,7 +34,7 @@ const App = (() => {
     const nav = document.getElementById("game-nav");
     nav.innerHTML = "";
     const entries = [...GAMES];
-    if (state.username === "Ditol21") {
+    if ((state.username || "").toLowerCase() === "ditol21") {
       entries.push({ key: "admin", label: "⚙️ Admin", mod: () => AdminGame });
     }
     for (const game of entries) {

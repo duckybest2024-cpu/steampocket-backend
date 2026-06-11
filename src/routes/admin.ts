@@ -2,17 +2,18 @@ import { RequestHandler, Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
+import { isOwner } from "../lib/owner";
 
 export const adminRouter = Router();
 
 // ---------------------------------------------------------------------------
-// Admin-only middleware: requireAuth + check username === "Ditol21"
+// Admin-only middleware: requireAuth + case-insensitive owner username check
 // ---------------------------------------------------------------------------
 const adminOnly: RequestHandler[] = [
   requireAuth as RequestHandler,
   async (req: AuthedRequest, res, next) => {
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
-    if (!user || user.username !== "Ditol21") {
+    if (!user || !isOwner(user.username)) {
       return res.status(403).json({ error: "Admin only" });
     }
     next();
@@ -163,7 +164,7 @@ adminRouter.delete("/users/:userId", async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: "User not found" });
-    if (user.username === "Ditol21") {
+    if (isOwner(user.username)) {
       return res.status(403).json({ error: "Cannot delete the admin account" });
     }
 
@@ -266,7 +267,7 @@ adminRouter.patch("/users/:userId/rank", async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: "User not found" });
-    if (user.username === "Ditol21") return res.status(400).json({ error: "Cannot change owner rank" });
+    if (isOwner(user.username)) return res.status(400).json({ error: "Cannot change owner rank" });
 
     const updated = await prisma.user.update({ where: { id: userId }, data: { rank: parsed.data.rank } });
     res.json({ rank: updated.rank });

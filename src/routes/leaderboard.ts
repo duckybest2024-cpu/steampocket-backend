@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
+import { isOwner } from "../lib/owner";
 
 export const leaderboardRouter = Router();
 
@@ -36,7 +37,7 @@ leaderboardRouter.get("/", async (req, res) => {
             username: u.username,
             nickname: u.nickname,
             displayName: u.nickname || u.username,
-            userRank: u.username === "Ditol21" ? "owner" : u.rank,
+            userRank: isOwner(u.username) ? "owner" : u.rank,
             level: u.level,
             [type]: g._count.id,
           };
@@ -53,7 +54,7 @@ leaderboardRouter.get("/", async (req, res) => {
           username: u.username,
           nickname: u.nickname,
           displayName: u.nickname || u.username,
-          userRank: u.username === "Ditol21" ? "owner" : u.rank,
+          userRank: isOwner(u.username) ? "owner" : u.rank,
           level: u.level,
           betCount: u._count.bets,
           balance: u.balance,

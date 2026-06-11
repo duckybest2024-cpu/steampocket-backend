@@ -40,7 +40,7 @@ const SettingsGame = (() => {
 
   function render(container, accountState) {
     function rebuild() {
-      const rank = accountState.username === "Ditol21" ? "owner" : (accountState.rank || "bronze");
+      const rank = (accountState.username || "").toLowerCase() === "ditol21" ? "owner" : (accountState.rank || "bronze");
       const displayName = accountState.nickname || accountState.username;
 
       container.innerHTML = `
