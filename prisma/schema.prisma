@@ -39,6 +39,9 @@ model User {
   receivedRequests  FriendRequest[] @relation("ReceivedRequests")
   friendships       Friendship[]    @relation("UserFriends")
   friendOf          Friendship[]    @relation("FriendOf")
+  nfts              Nft[]
+  sentTrades        TradeOffer[]    @relation("SentTrades")
+  receivedTrades    TradeOffer[]    @relation("ReceivedTrades")
 
   @@index([balance])
   @@index([level])
@@ -149,4 +152,57 @@ model HouseBankTransaction {
   dollarsChange Int      @default(0)
   note          String?
   createdAt     DateTime @default(now())
+}
+
+model Nft {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  name        String
+  description String
+  rarity      String   // common | uncommon | rare | epic | legendary
+  category    String   // win | level | first | streak | special
+  emoji       String
+  mintedAt    DateTime @default(now())
+  tradeItems  TradeOfferItem[]
+
+  @@index([ownerId])
+}
+
+model TradeOffer {
+  id              String   @id @default(cuid())
+  fromId          String
+  toId            String
+  offeredChips    Int      @default(0)
+  requestedChips  Int      @default(0)
+  status          String   @default("pending") // pending | accepted | declined | cancelled
+  message         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  from            User     @relation("SentTrades", fields: [fromId], references: [id])
+  to              User     @relation("ReceivedTrades", fields: [toId], references: [id])
+  items           TradeOfferItem[]
+
+  @@index([fromId])
+  @@index([toId, status])
+}
+
+model TradeOfferItem {
+  id           String     @id @default(cuid())
+  tradeOfferId String
+  nftId        String
+  side         String     // offered | requested
+  tradeOffer   TradeOffer @relation(fields: [tradeOfferId], references: [id])
+  nft          Nft        @relation(fields: [nftId], references: [id])
+}
+
+model JackpotRound {
+  id          String   @id @default(cuid())
+  status      String   @default("open")  // open | spinning | closed
+  totalPot    Int      @default(0)
+  winnerId    String?
+  winnerName  String?
+  entries     String   @default("[]") // JSON array of { userId, username, amount }
+  createdAt   DateTime @default(now())
+  closedAt    DateTime?
 }

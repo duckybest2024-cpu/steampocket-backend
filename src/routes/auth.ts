@@ -28,8 +28,6 @@ authRouter.post("/register", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const seedPair = createSeedPair();
-    const emailToken = crypto.randomBytes(32).toString("hex");
-    const emailTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const user = await prisma.user.create({
       data: {
@@ -40,9 +38,7 @@ authRouter.post("/register", async (req, res) => {
         serverSeed: seedPair.serverSeed,
         serverSeedHash: seedPair.serverSeedHash,
         clientSeed: seedPair.clientSeed,
-        emailVerified: false,
-        emailToken,
-        emailTokenExpiry,
+        emailVerified: true,
       },
     });
 
@@ -50,20 +46,10 @@ authRouter.post("/register", async (req, res) => {
       data: { userId: user.id, type: "bonus", amount: config.startingBalance, balance: config.startingBalance, reference: "welcome_bonus" },
     });
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const verificationUrl = `${baseUrl}/auth/verify-email?token=${emailToken}`;
-
-    // Attempt to send via SMTP if configured; always log to console as fallback
-    await sendVerificationEmail(email, username, verificationUrl).catch((err) =>
-      console.error("Failed to send verification email:", err)
-    );
-
-    // Always return the link so the UI can show it — without SMTP this is how the
-    // user verifies. Email uniqueness is still enforced so you can't steal an address.
     res.status(201).json({
-      emailSent: true,
-      message: "Account created! Click the verification link to activate your account.",
-      verificationLink: verificationUrl,
+      token: signToken(user.id),
+      user: publicUser({ ...user, emailVerified: true }),
+      message: "Account created! Welcome to Casino Aurelius.",
     });
   } catch (err: any) {
     if (err?.code === "P2002") {
@@ -155,14 +141,6 @@ authRouter.post("/login", async (req, res) => {
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ error: "Invalid credentials" });
-
-    if (!user.emailVerified) {
-      return res.status(403).json({
-        error: "Please verify your email before logging in. Check your inbox for the verification link.",
-        emailNotVerified: true,
-        email: user.email,
-      });
-    }
 
     const token = signToken(user.id);
     res.json({ token, user: publicUser(user) });

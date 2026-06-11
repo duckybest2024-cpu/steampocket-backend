@@ -17,6 +17,7 @@ import { leaderboardRouter } from "./routes/leaderboard";
 import { friendsRouter } from "./routes/friends";
 import { adminRouter } from "./routes/admin";
 import { settingsRouter } from "./routes/settings";
+import { nftRouter } from "./routes/nfts";
 
 export function createApp() {
   const app = express();
@@ -53,6 +54,7 @@ export function createApp() {
   app.use("/leaderboard", leaderboardRouter);
   app.use("/friends", friendsRouter);
   app.use("/admin", adminRouter);
+  app.use("/nfts", nftRouter);
 
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 

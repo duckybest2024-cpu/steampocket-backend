@@ -1,0 +1,138 @@
+const BingoGame = (() => {
+  function render(container, state) {
+    let socket = null;
+    let myCard = null;
+    let drawn = [];
+
+    container.innerHTML = `
+      <div class="game-panel" style="max-width:640px">
+        <h2 style="margin:0 0 4px">🎱 Bingo</h2>
+        <p style="margin:0 0 14px;color:var(--text-dim);font-size:0.88rem">Buy in for 50 🪙 · Get a 5×5 card · First to complete a row/col/diagonal wins!</p>
+
+        <div id="bingo-status" style="background:var(--bg-elev);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;text-align:center">
+          <div id="bingo-phase" style="font-size:1rem;font-weight:700;color:var(--accent)">Waiting for players…</div>
+          <div id="bingo-player-count" style="font-size:0.85rem;color:var(--text-dim);margin-top:4px">Be the first to join! Need 2+ players.</div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:14px">
+          <button id="bingo-join" class="primary-btn" style="flex:1">Join Round (50 🪙 buy-in)</button>
+        </div>
+
+        <div id="bingo-card-wrap" style="display:none;margin-bottom:14px">
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            ${["B","I","N","G","O"].map((l) => `<div style="flex:1;text-align:center;font-weight:800;font-size:1.1rem;color:var(--accent)">${l}</div>`).join("")}
+          </div>
+          <div id="bingo-card" style="display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Numbers Drawn</div>
+          <div id="bingo-drawn" style="display:flex;gap:4px;flex-wrap:wrap;min-height:30px"></div>
+        </div>
+
+        <div id="bingo-result" class="result-banner"></div>
+      </div>`;
+
+    const phaseEl = document.getElementById("bingo-phase");
+    const playerCountEl = document.getElementById("bingo-player-count");
+    const joinBtn = document.getElementById("bingo-join");
+    const cardWrap = document.getElementById("bingo-card-wrap");
+    const cardEl = document.getElementById("bingo-card");
+    const drawnEl = document.getElementById("bingo-drawn");
+    const resultEl = document.getElementById("bingo-result");
+
+    function renderCard() {
+      if (!myCard) return;
+      cardEl.innerHTML = myCard.map((row, r) =>
+        `<div style="display:flex;gap:4px">${row.map((num, c) => {
+          const isDawn = drawn.includes(num);
+          return `<div style="flex:1;text-align:center;padding:8px 2px;border-radius:8px;font-size:0.88rem;font-weight:700;
+            background:${isDawn ? "var(--accent)" : "var(--bg-elev)"};
+            color:${isDawn ? "white" : "var(--text)"};
+            border:2px solid ${isDawn ? "var(--accent)" : "var(--border)"};
+            transition:background 0.3s">${num}</div>`;
+        }).join("")}</div>`
+      ).join("");
+    }
+
+    function renderDrawn() {
+      drawnEl.innerHTML = drawn.map((n) =>
+        `<div style="background:var(--accent);color:white;border-radius:6px;padding:4px 8px;font-size:0.78rem;font-weight:700">${n}</div>`
+      ).join("");
+    }
+
+    socket = io("/bingo", { auth: { token: Api.getToken() } });
+
+    socket.on("state", ({ phase, players, drawn: d }) => {
+      drawn = d || [];
+      renderDrawn();
+      if (phase === "waiting") {
+        phaseEl.textContent = "Waiting for players…";
+        playerCountEl.textContent = `${players} player${players !== 1 ? "s" : ""} joined. Need 2+ to start.`;
+        joinBtn.disabled = false;
+      } else if (phase === "playing") {
+        phaseEl.textContent = "🎱 Game in progress";
+        joinBtn.disabled = true;
+      }
+    });
+
+    socket.on("card", ({ card }) => {
+      myCard = card;
+      joinBtn.disabled = true;
+      joinBtn.textContent = "✅ Joined!";
+      cardWrap.style.display = "";
+      renderCard();
+    });
+
+    socket.on("player_joined", ({ players, username }) => {
+      playerCountEl.textContent = `${players} players joined`;
+      if (username !== state.username) UI.toast(`${username} joined!`, "info");
+    });
+
+    socket.on("starting_soon", ({ inMs, players }) => {
+      phaseEl.textContent = `Starting in ${Math.ceil(inMs / 1000)}s with ${players} players…`;
+    });
+
+    socket.on("game_start", ({ players }) => {
+      phaseEl.textContent = "🎱 Drawing numbers…";
+      resultEl.className = "result-banner";
+      resultEl.textContent = "";
+    });
+
+    socket.on("number_drawn", ({ num, drawn: d }) => {
+      drawn = d;
+      renderDrawn();
+      renderCard();
+    });
+
+    socket.on("bingo", ({ winners, prize }) => {
+      const isWinner = winners.includes(state.username);
+      resultEl.className = "result-banner " + (isWinner ? "win" : "loss");
+      resultEl.textContent = isWinner
+        ? `🎱 BINGO! You won +${(prize/100).toLocaleString()} chips!`
+        : `🎱 ${winners.join(", ")} called BINGO! Prize: ${(prize/100).toLocaleString()} chips`;
+      if (isWinner) App.refreshAccount();
+    });
+
+    socket.on("waiting", () => {
+      phaseEl.textContent = "Waiting for next round…";
+      myCard = null;
+      drawn = [];
+      cardWrap.style.display = "none";
+      joinBtn.disabled = false;
+      joinBtn.textContent = "Join Round (50 🪙 buy-in)";
+      renderDrawn();
+    });
+
+    socket.on("error", (msg) => { UI.toast(msg, "loss"); joinBtn.disabled = false; });
+
+    joinBtn.addEventListener("click", () => {
+      joinBtn.disabled = true;
+      socket.emit("join");
+    });
+
+    return () => { if (socket) socket.disconnect(); };
+  }
+
+  return { render };
+})();

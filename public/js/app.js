@@ -4,24 +4,37 @@ const App = (() => {
   let _lowBalanceToastShown = false;
 
   const GAMES = [
-    { key: "crash",    label: "🚀 Crash",    mod: () => CrashGame },
-    { key: "coinflip", label: "🪙 Coinflip",  mod: () => CoinflipGame },
-    { key: "dice", label: "🎲 Dice", mod: () => DiceGame },
-    { key: "limbo", label: "📈 Limbo", mod: () => LimboGame },
-    { key: "mines", label: "💣 Mines", mod: () => MinesGame },
-    { key: "plinko", label: "🔵 Plinko", mod: () => PlinkoGame },
-    { key: "roulette", label: "🎡 Roulette", mod: () => RouletteGame },
-    { key: "blackjack", label: "🃏 Blackjack", mod: () => BlackjackGame },
-    { key: "slots", label: "🎰 Slots", mod: () => SlotsGame },
-    { key: "keno", label: "🎯 Keno", mod: () => KenoGame },
-    { key: "wheel", label: "🎡 Wheel", mod: () => WheelGame },
-    { key: "baccarat", label: "🎴 Baccarat", mod: () => BaccaratGame },
-    { key: "hilo", label: "↕️ Hi-Lo", mod: () => HiloGame },
-    { key: "videopoker", label: "🃏 Video Poker", mod: () => VideoPokerGame },
-    { key: "chipshop", label: "🏦 Chips", mod: () => ChipShopGame },
-    { key: "leaderboard", label: "🏆 Leaderboard", mod: () => LeaderboardGame },
-    { key: "friends", label: "👥 Friends", mod: () => FriendsGame },
-    { key: "settings", label: "⚙️ Settings", mod: () => SettingsGame },
+    // ── Solo games ──
+    { key: "crash",       label: "🚀 Crash",        mod: () => CrashGame },
+    { key: "dice",        label: "🎲 Dice",          mod: () => DiceGame },
+    { key: "limbo",       label: "📈 Limbo",         mod: () => LimboGame },
+    { key: "mines",       label: "💣 Mines",         mod: () => MinesGame },
+    { key: "plinko",      label: "🔵 Plinko",        mod: () => PlinkoGame },
+    { key: "roulette",    label: "🎡 Roulette",      mod: () => RouletteGame },
+    { key: "blackjack",   label: "🃏 Blackjack",     mod: () => BlackjackGame },
+    { key: "slots",       label: "🎰 Slots",         mod: () => SlotsGame },
+    { key: "keno",        label: "🎯 Keno",          mod: () => KenoGame },
+    { key: "wheel",       label: "🎡 Wheel",         mod: () => WheelGame },
+    { key: "baccarat",    label: "🎴 Baccarat",      mod: () => BaccaratGame },
+    { key: "hilo",        label: "↕️ Hi-Lo",         mod: () => HiloGame },
+    { key: "videopoker",  label: "🃏 Video Poker",   mod: () => VideoPokerGame },
+    { key: "tower",       label: "🗼 Tower",         mod: () => TowerGame },
+    // ── Multiplayer ──
+    { key: "coinflip",    label: "🪙 Coinflip",      mod: () => CoinflipGame },
+    { key: "jackpot",     label: "🏆 Jackpot",       mod: () => JackpotGame },
+    { key: "horserace",   label: "🏇 Horse Race",    mod: () => HorseRaceGame },
+    { key: "battledice",  label: "⚔️ Battle Dice",   mod: () => BattleDiceGame },
+    { key: "rps",         label: "✊ Rock Paper Scissors", mod: () => RPSGame },
+    { key: "raffle",      label: "🎟️ Raffle",        mod: () => RaffleGame },
+    { key: "bingo",       label: "🎱 Bingo",         mod: () => BingoGame },
+    { key: "multiroulette", label: "🌀 Multi Roulette", mod: () => MultiRouletteGame },
+    { key: "poker",       label: "♠️ Poker",         mod: () => PokerGame },
+    // ── Account ──
+    { key: "nfts",        label: "🖼️ NFTs",          mod: () => NFTsGame },
+    { key: "chipshop",    label: "🏦 Chips",          mod: () => ChipShopGame },
+    { key: "leaderboard", label: "🏆 Leaderboard",   mod: () => LeaderboardGame },
+    { key: "friends",     label: "👥 Friends",        mod: () => FriendsGame },
+    { key: "settings",    label: "⚙️ Settings",       mod: () => SettingsGame },
   ];
 
   let activeCleanup = null;
@@ -225,13 +238,9 @@ const App = (() => {
           email: emailVal,
           password: fd.get("password"),
         });
-        // Registration no longer returns a token — user must verify email first
-        if (data.emailSent) {
-          showVerifyEmailUI(emailVal, data.verificationLink);
-        } else if (data.token) {
-          // Legacy path (should not happen with new backend)
+        if (data.token) {
           Api.setToken(data.token);
-          UI.toast("Welcome! 1,000 chips added to your balance.", "win");
+          UI.toast("Welcome to Casino Aurelius! 1,000 chips added.", "win");
           await enterApp();
         }
       } catch (err) {
