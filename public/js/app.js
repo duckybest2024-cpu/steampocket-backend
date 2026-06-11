@@ -86,6 +86,7 @@ const App = (() => {
     showScreen("app");
     buildNav();
     await refreshAccount();
+    buildNav(); // rebuild now that state.username is set (adds Admin for Ditol21)
 
     // Handle redirect back from Stripe Checkout
     const params = new URLSearchParams(window.location.search);
