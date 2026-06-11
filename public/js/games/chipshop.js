@@ -44,15 +44,15 @@ const ChipShopGame = (() => {
             </div>
           </div>
 
-          <!-- Stripe card purchase -->
+          <!-- LiqPay card purchase -->
           <div class="chip-section stripe-section">
             <div class="stripe-header">
               <h3>💳 Buy Chips with Card</h3>
-              <span class="stripe-badge">TEST MODE</span>
+              <span class="stripe-badge" style="background:rgba(0,160,255,0.15);color:#40b3ff;border-color:rgba(0,160,255,0.4)">LiqPay</span>
             </div>
             <p class="chip-section-hint">
-              Use test card <code class="test-card">4242 4242 4242 4242</code> · any future date · any CVC.
-              Chips are added instantly after payment.
+              Pay securely via LiqPay — Visa, Mastercard, and Ukrainian cards accepted.
+              Chips are credited instantly after payment is confirmed.
             </p>
             <div class="buy-packages">
               ${PACKAGES.map(p => `
@@ -64,7 +64,7 @@ const ChipShopGame = (() => {
                   <div class="pkg-name">${p.name}</div>
                   <div class="pkg-chips">${p.chips.toLocaleString()} 🪙</div>
                   <div class="pkg-price">${usd(p.priceCents)}</div>
-                  <button class="stripe-buy-btn" data-id="${p.id}">Buy now</button>
+                  <button class="liqpay-buy-btn" data-id="${p.id}">Buy now</button>
                 </div>
               `).join("")}
             </div>
@@ -130,17 +130,30 @@ const ChipShopGame = (() => {
         </div>
       `;
 
-      // Stripe buy buttons
-      container.querySelectorAll(".stripe-buy-btn").forEach((btn) => {
+      // LiqPay buy buttons — get signed payload from server, then submit form to LiqPay
+      container.querySelectorAll(".liqpay-buy-btn").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const pkgId = btn.dataset.id;
           btn.disabled = true;
           btn.textContent = "Loading…";
           try {
-            const { url } = await Api.post("/wallet/create-checkout-session", { packageId: pkgId });
-            window.location.href = url;
+            const { data, signature, checkoutUrl } = await Api.post("/wallet/liqpay-checkout", { packageId: pkgId });
+            // Submit form to LiqPay's hosted checkout page
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = checkoutUrl;
+            form.style.display = "none";
+            [["data", data], ["signature", signature]].forEach(([name, value]) => {
+              const input = document.createElement("input");
+              input.type = "hidden";
+              input.name = name;
+              input.value = value;
+              form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
           } catch (err) {
-            UI.toast(err.message || "Payment unavailable — add STRIPE_SECRET_KEY to env", "loss");
+            UI.toast(err.message || "Payment unavailable — add LIQPAY_PUBLIC_KEY and LIQPAY_PRIVATE_KEY to env", "loss");
             btn.disabled = false;
             btn.textContent = "Buy now";
           }
