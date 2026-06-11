@@ -1,6 +1,7 @@
 /* App shell: auth flow, navigation between games, shared account state. */
 const App = (() => {
   const state = { id: null, username: null, nickname: null, rank: "bronze", balance: 0, bank: 0, level: 1, xp: 0, fairness: null };
+  let _lowBalanceToastShown = false;
 
   const GAMES = [
     { key: "crash",    label: "🚀 Crash",    mod: () => CrashGame },
@@ -80,6 +81,15 @@ const App = (() => {
     state.fairness = user.fairness;
     UI.setBalance(state.balance);
     UI.setLevel(state.level, state.xp);
+
+    // Nudge low-balance players toward the chip shop (once per session)
+    if (state.balance <= 1000 && !_lowBalanceToastShown) {
+      _lowBalanceToastShown = true;
+      setTimeout(() => {
+        UI.toast("⚡ You have 10 chips or fewer — visit 🏦 Chips to claim 20 free chips!", "info");
+      }, 800);
+    }
+
     return user;
   }
 

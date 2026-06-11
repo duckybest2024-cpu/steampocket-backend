@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
-import { applyLedgerEntry, InsufficientFundsError } from "../lib/wallet";
+import { applyLedgerEntry, updateHouseChips, InsufficientFundsError } from "../lib/wallet";
 import { getStripe, CHIP_PACKAGES } from "../lib/stripe";
 
 export const walletRouter = Router();
@@ -42,6 +42,36 @@ walletRouter.post("/faucet", requireAuth, async (req: AuthedRequest, res) => {
 
   const updated = await applyLedgerEntry(prisma, user.id, "deposit", parsed.data.amount, "faucet_topup");
   res.json({ balance: updated.balance });
+});
+
+// ---------------------------------------------------------------------------
+// Emergency free chips — 20 chips when balance ≤ 10 chips, once per 24 hours
+// ---------------------------------------------------------------------------
+
+walletRouter.post("/free-chips", requireAuth as any, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    if (user.balance > 1_000) {
+      return res.status(400).json({ error: "Free chips are only available when you have 10 chips or fewer" });
+    }
+
+    const recent = await prisma.transaction.findFirst({
+      where: { userId, type: "free_chips", createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+    });
+    if (recent) {
+      const retryMs = 24 * 60 * 60 * 1000 - (Date.now() - recent.createdAt.getTime());
+      const retryHours = Math.ceil(retryMs / (60 * 60 * 1000));
+      return res.status(429).json({ error: `Come back in ~${retryHours}h for another free chip claim` });
+    }
+
+    const updated = await applyLedgerEntry(prisma, userId, "free_chips", 2_000, "emergency_chips");
+    res.json({ balance: updated.balance, awarded: 2_000 });
+  } catch (err) {
+    console.error("Free chips error:", err);
+    res.status(500).json({ error: "Failed to award free chips" });
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -127,6 +157,9 @@ walletRouter.post("/buy-chips", requireAuth, async (req: AuthedRequest, res) => 
       return u;
     });
 
+    // Moving from player bank → playing chips: house loses chips, gains dollars
+    await updateHouseChips(prisma, -amount, amount).catch(() => {});
+
     res.json({ balance: updated.balance, bank: updated.bank });
   } catch (err) {
     console.error("Buy chips error:", err);
@@ -152,6 +185,9 @@ walletRouter.post("/cashout-chips", requireAuth, async (req: AuthedRequest, res)
       });
       return u;
     });
+
+    // Moving from playing chips → player bank: house gains chips, loses dollars
+    await updateHouseChips(prisma, amount, -amount).catch(() => {});
 
     res.json({ balance: updated.balance, bank: updated.bank, cashedOut: amount });
   } catch (err) {

@@ -22,6 +22,15 @@ const ChipShopGame = (() => {
             <p>Buy chips with a card (test mode — use card <code>4242 4242 4242 4242</code>), or move chips between your bank and table.</p>
           </div>
 
+          ${gameChips <= 10 ? `
+          <div class="chip-section" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:12px;padding:18px;margin-bottom:4px;">
+            <h3 style="margin:0 0 8px;color:#fbbf24;">⚡ You're almost out of chips!</h3>
+            <p class="chip-section-hint" style="margin:0 0 12px;">Claim 20 free emergency chips to keep playing. Available once every 24 hours.</p>
+            <div class="btn-row">
+              <button id="free-chips-btn" class="primary-btn">Get 20 Free Chips</button>
+            </div>
+          </div>` : ""}
+
           <div class="chip-balances">
             <div class="chip-bal-card playing">
               <div class="cbc-label">Playing Chips</div>
@@ -158,6 +167,26 @@ const ChipShopGame = (() => {
           } catch (err) {
             UI.toast(err.message, "loss");
             b2tBtn.disabled = false;
+          }
+        });
+      }
+
+      // Emergency free chips (≤10 chips)
+      const freeChipsBtn = container.querySelector("#free-chips-btn");
+      if (freeChipsBtn) {
+        freeChipsBtn.addEventListener("click", async () => {
+          freeChipsBtn.disabled = true;
+          freeChipsBtn.textContent = "Claiming…";
+          try {
+            const res = await Api.post("/wallet/free-chips", {});
+            accountState.balance = res.balance;
+            UI.setBalance(res.balance);
+            UI.toast("🎁 Got 20 free chips! Good luck!", "win");
+            rebuild();
+          } catch (err) {
+            UI.toast(err.message || "Could not claim free chips.", "loss");
+            freeChipsBtn.disabled = false;
+            freeChipsBtn.textContent = "Get 20 Free Chips";
           }
         });
       }

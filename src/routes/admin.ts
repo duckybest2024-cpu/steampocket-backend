@@ -208,7 +208,6 @@ adminRouter.get("/bank", async (_req, res) => {
 
     res.json({
       chips: bank.chips,
-      liveChips: bank.chips + houseIncome,
       dollars: bank.dollars,
       houseIncome,
       totalWagered,

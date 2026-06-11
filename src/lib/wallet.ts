@@ -9,6 +9,31 @@ export class InsufficientFundsError extends Error {
   }
 }
 
+// Transaction types where the player pays the house — house chips increase
+const HOUSE_CREDIT_TYPES = new Set(["bet", "coinflip_bet"]);
+// Transaction types where the house pays the player — house chips decrease
+const HOUSE_DEBIT_TYPES = new Set([
+  "payout", "coinflip_payout", "coinflip_refund",
+  "levelup_bonus", "rakeback", "free_chips", "deposit",
+]);
+
+/** Update house chip reserve. fire-and-forget — never throws. */
+async function updateHouseChips(db: Db, chipsChange: number, dollarsChange = 0): Promise<void> {
+  if (chipsChange === 0 && dollarsChange === 0) return;
+  const updateData: Record<string, unknown> = {};
+  if (chipsChange !== 0) updateData.chips = { increment: chipsChange };
+  if (dollarsChange !== 0) updateData.dollars = { increment: dollarsChange };
+  await (db as PrismaClient).houseBank
+    .upsert({
+      where: { id: "singleton" },
+      create: { id: "singleton", chips: 1_000_000_000 + chipsChange, dollars: 1_000_000_000 + dollarsChange },
+      update: updateData,
+    })
+    .catch((err: unknown) => console.error("House bank update failed (non-fatal):", err));
+}
+
+export { updateHouseChips };
+
 /**
  * Apply a signed balance delta atomically and append a ledger entry.
  * Negative deltas (bets, withdrawals) are rejected if they'd push the balance below zero —
@@ -39,6 +64,13 @@ export async function applyLedgerEntry(
       reference,
     },
   });
+
+  // Keep house bank chips in sync with game results
+  if (HOUSE_CREDIT_TYPES.has(type)) {
+    await updateHouseChips(db, Math.abs(delta));
+  } else if (HOUSE_DEBIT_TYPES.has(type)) {
+    await updateHouseChips(db, -Math.abs(delta));
+  }
 
   return updated;
 }

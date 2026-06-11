@@ -394,12 +394,11 @@ const AdminGame = (() => {
       try {
         const d = await Api.get("/admin/bank");
         const netColor = d.houseIncome >= 0 ? "var(--win)" : "var(--loss)";
-        const liveChips = d.liveChips !== undefined ? d.liveChips : d.chips;
 
         pane.innerHTML = `
           <div style="${S.bankGrid}">
             ${[
-              ["🪙 Live Chips",    chips(liveChips || 0),       "var(--gold)"],
+              ["🪙 House Chips",  chips(d.chips || 0),         "var(--gold)"],
               ["💵 House Dollars", "$" + Math.floor((d.dollars||0)/100).toLocaleString(), "var(--win)"],
               ["📈 House Income",  money(d.houseIncome || 0),   netColor],
               ["💸 Total Wagered", money(d.totalWagered || 0),  "var(--text)"],
