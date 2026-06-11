@@ -266,6 +266,28 @@ walletRouter.get("/leaderboard", async (req, res) => {
   });
 });
 
+// Promo code redemption (used in chip shop + feature 14)
+walletRouter.post("/promo/redeem", requireAuth, async (req: AuthedRequest, res) => {
+  const { code } = req.body as { code?: string };
+  if (!code) return res.status(400).json({ error: "Code required" });
+  try {
+    const promo = await prisma.promoCode.findFirst({ where: { code: code.toUpperCase().trim(), active: true } });
+    if (!promo) return res.status(404).json({ error: "Invalid or expired promo code" });
+    if (promo.expiresAt && promo.expiresAt < new Date()) return res.status(400).json({ error: "This promo code has expired" });
+    if (promo.uses >= promo.maxUses) return res.status(400).json({ error: "This promo code has been fully redeemed" });
+    const existing = await prisma.promoRedemption.findFirst({ where: { promoCodeId: promo.id, userId: req.userId! } });
+    if (existing) return res.status(400).json({ error: "You've already used this promo code" });
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.promoCode.update({ where: { id: promo.id }, data: { uses: { increment: 1 } } });
+      await tx.promoRedemption.create({ data: { promoCodeId: promo.id, userId: req.userId! } });
+      const u = await tx.user.update({ where: { id: req.userId! }, data: { balance: { increment: promo.chips } } });
+      await tx.transaction.create({ data: { userId: req.userId!, type: "promo", amount: promo.chips, balance: u.balance, reference: promo.code } });
+      return u;
+    });
+    res.json({ chips: promo.chips, balance: updated.balance, message: `Redeemed! ${Math.floor(promo.chips / 100)} chips added.` });
+  } catch (err) { res.status(500).json({ error: "Failed to redeem code" }); }
+});
+
 walletRouter.use((err: unknown, _req: unknown, res: import("express").Response, next: import("express").NextFunction) => {
   if (err instanceof InsufficientFundsError) return res.status(400).json({ error: err.message });
   next(err);

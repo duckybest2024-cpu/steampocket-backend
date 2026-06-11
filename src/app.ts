@@ -18,6 +18,7 @@ import { friendsRouter } from "./routes/friends";
 import { adminRouter } from "./routes/admin";
 import { settingsRouter } from "./routes/settings";
 import { nftRouter } from "./routes/nfts";
+import { prisma } from "./lib/prisma";
 
 export function createApp() {
   const app = express();
@@ -55,6 +56,23 @@ export function createApp() {
   app.use("/friends", friendsRouter);
   app.use("/admin", adminRouter);
   app.use("/nfts", nftRouter);
+
+  // Public site config + active broadcasts
+  app.get("/config", async (_req, res) => {
+    try {
+      const configs = await prisma.siteConfig.findMany();
+      const obj: Record<string, string> = {};
+      for (const c of configs) obj[c.key] = c.value;
+      res.json(obj);
+    } catch { res.json({}); }
+  });
+
+  app.get("/broadcasts", async (_req, res) => {
+    try {
+      const broadcasts = await prisma.broadcast.findMany({ where: { active: true }, orderBy: { createdAt: "desc" }, take: 5 });
+      res.json({ broadcasts });
+    } catch { res.json({ broadcasts: [] }); }
+  });
 
   app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 

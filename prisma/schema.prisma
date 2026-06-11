@@ -207,3 +207,38 @@ model JackpotRound {
   createdAt   DateTime @default(now())
   closedAt    DateTime?
 }
+
+model SiteConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model PromoCode {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  chips       Int
+  maxUses     Int      @default(1)
+  uses        Int      @default(0)
+  expiresAt   DateTime?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  redemptions PromoRedemption[]
+}
+
+model PromoRedemption {
+  id          String    @id @default(cuid())
+  promoCodeId String
+  userId      String
+  redeemedAt  DateTime  @default(now())
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
+  @@unique([promoCodeId, userId])
+}
+
+model Broadcast {
+  id        String   @id @default(cuid())
+  message   String
+  type      String   @default("info")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
