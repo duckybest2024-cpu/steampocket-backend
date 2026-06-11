@@ -97,13 +97,25 @@ const App = (() => {
     showScreen("app");
     buildNav();
     await refreshAccount();
-    buildNav(); // rebuild now that state.username is set (adds Admin for Ditol21)
+    buildNav();
+
+    const params = new URLSearchParams(window.location.search);
+
+    // Handle email verification redirect from /auth/verify-email
+    if (params.get("emailVerified") === "ok") {
+      history.replaceState({}, "", "/");
+      UI.toast("✅ Email verified! Welcome to Casino Aurelius.", "win");
+    } else if (params.get("emailVerified") === "expired") {
+      history.replaceState({}, "", "/");
+      UI.toast("⚠️ Verification link expired. Please request a new one.", "info");
+    } else if (params.get("emailVerified") === "error") {
+      history.replaceState({}, "", "/");
+      UI.toast("❌ Invalid verification link.", "loss");
+    }
 
     // Handle redirect back from Stripe Checkout
-    const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
       history.replaceState({}, "", "/");
-      // Balance was updated by webhook; refresh to show new chips
       await refreshAccount();
       UI.toast("💳 Payment received! Chips added to your account.", "win");
       mount("chipshop");
@@ -114,6 +126,44 @@ const App = (() => {
     } else {
       mount("crash");
     }
+  }
+
+  function showVerifyEmailUI(email, devLink) {
+    const errorEl = document.getElementById("auth-error");
+    errorEl.innerHTML = `
+      <div style="text-align:left;line-height:1.6;">
+        <strong>📧 Check your email!</strong><br/>
+        A verification link was sent to <strong>${email}</strong>.<br/>
+        Click it to activate your account, then log in.
+        ${devLink ? `<br/><br/><strong>Dev link:</strong> <a href="${devLink}" style="color:#6f5cf2;word-break:break-all;">${devLink}</a>` : ""}
+        <br/><br/>
+        <button id="resend-btn" style="background:transparent;border:1px solid rgba(111,92,242,0.5);color:#6f5cf2;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;">
+          Resend verification email
+        </button>
+      </div>`;
+    errorEl.classList.remove("hidden");
+    errorEl.style.color = "var(--text)";
+
+    document.getElementById("resend-btn").addEventListener("click", async () => {
+      const btn = document.getElementById("resend-btn");
+      btn.disabled = true; btn.textContent = "Sending…";
+      try {
+        const data = await Api.post("/auth/resend-verification", { email });
+        btn.textContent = "Sent!";
+        if (data.devVerificationLink) {
+          errorEl.querySelector("strong:last-of-type")?.remove();
+          const a = document.createElement("a");
+          a.href = data.devVerificationLink;
+          a.style.cssText = "color:#6f5cf2;word-break:break-all;display:block;margin-top:8px;font-size:0.82rem;";
+          a.textContent = data.devVerificationLink;
+          errorEl.appendChild(a);
+        }
+      } catch (err) {
+        btn.textContent = "Resend verification email";
+        btn.disabled = false;
+        UI.toast(err.message || "Failed to resend.", "loss");
+      }
+    });
   }
 
   function wireAuthForms() {
@@ -130,11 +180,14 @@ const App = (() => {
         loginForm.classList.toggle("hidden", !isLogin);
         registerForm.classList.toggle("hidden", isLogin);
         errorEl.classList.add("hidden");
+        errorEl.style.color = "";
       });
     });
 
     function showError(message) {
+      errorEl.innerHTML = "";
       errorEl.textContent = message;
+      errorEl.style.color = "";
       errorEl.classList.remove("hidden");
     }
 
@@ -143,11 +196,15 @@ const App = (() => {
       errorEl.classList.add("hidden");
       const fd = new FormData(loginForm);
       try {
-        const { token } = await Api.login({ identifier: fd.get("identifier"), password: fd.get("password") });
-        Api.setToken(token);
+        const data = await Api.login({ identifier: fd.get("identifier"), password: fd.get("password") });
+        Api.setToken(data.token);
         await enterApp();
       } catch (err) {
-        showError(err.message);
+        if (err.emailNotVerified) {
+          showVerifyEmailUI(err.email, null);
+        } else {
+          showError(err.message);
+        }
       }
     });
 
@@ -155,15 +212,22 @@ const App = (() => {
       e.preventDefault();
       errorEl.classList.add("hidden");
       const fd = new FormData(registerForm);
+      const emailVal = fd.get("email");
       try {
-        const { token } = await Api.register({
+        const data = await Api.register({
           username: fd.get("username"),
-          email: fd.get("email"),
+          email: emailVal,
           password: fd.get("password"),
         });
-        Api.setToken(token);
-        UI.toast("Welcome! $1,000 has been added to your balance.", "win");
-        await enterApp();
+        // Registration no longer returns a token — user must verify email first
+        if (data.emailSent) {
+          showVerifyEmailUI(emailVal, data.devVerificationLink);
+        } else if (data.token) {
+          // Legacy path (should not happen with new backend)
+          Api.setToken(data.token);
+          UI.toast("Welcome! 1,000 chips added to your balance.", "win");
+          await enterApp();
+        }
       } catch (err) {
         showError(err.message);
       }

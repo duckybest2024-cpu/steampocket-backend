@@ -31,7 +31,13 @@ const Api = (() => {
 
     if (!res.ok) {
       const message = (data && data.error) || `Request failed (${res.status})`;
-      throw new Error(message);
+      const err = new Error(message);
+      // Attach extra fields from the server response so callers can inspect them
+      if (data) {
+        if (data.emailNotVerified) err.emailNotVerified = true;
+        if (data.email) err.email = data.email;
+      }
+      throw err;
     }
     return data;
   }
