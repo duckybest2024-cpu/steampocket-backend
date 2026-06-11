@@ -42,6 +42,44 @@ leaderboardRouter.get("/", async (req, res) => {
             [type]: g._count.id,
           };
         });
+    } else if (type === "overall") {
+      const [users, winGroups] = await Promise.all([
+        prisma.user.findMany({
+          where: { isBanned: false },
+          include: { _count: { select: { bets: true } } },
+          take: 500,
+        }),
+        prisma.bet.groupBy({
+          by: ["userId"],
+          where: { result: "win" },
+          _count: { id: true },
+        }),
+      ]);
+
+      const winMap = new Map(winGroups.map((g) => [g.userId, g._count.id]));
+
+      const scored = users
+        .map((u) => {
+          const wins = winMap.get(u.id) ?? 0;
+          const wealthChips = Math.floor((u.balance + u.bank) / 100);
+          const score = wealthChips + wins * 50 + u.level * 200;
+          return {
+            username: u.username,
+            nickname: u.nickname,
+            displayName: u.nickname || u.username,
+            userRank: isOwner(u.username) ? "owner" : u.rank,
+            level: u.level,
+            betCount: u._count.bets,
+            totalChips: u.balance + u.bank,
+            wins,
+            score,
+          };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 50)
+        .map((u, i) => ({ rank: i + 1, ...u }));
+
+      leaderboard = scored;
     } else {
       const users = await prisma.user.findMany({
         where: { isBanned: false },
@@ -90,6 +128,20 @@ leaderboardRouter.get("/me", requireAuth as any, async (req: AuthedRequest, res)
       });
       const idx = allGrouped.findIndex((g) => g.userId === req.userId);
       res.json({ rank: idx === -1 ? null : idx + 1, [type]: count });
+    } else if (type === "overall") {
+      const [allUsers, winGroups] = await Promise.all([
+        prisma.user.findMany({ where: { isBanned: false }, select: { id: true, balance: true, bank: true, level: true } }),
+        prisma.bet.groupBy({ by: ["userId"], where: { result: "win" }, _count: { id: true } }),
+      ]);
+      const winMap = new Map(winGroups.map((g) => [g.userId, g._count.id]));
+      const scored = allUsers
+        .map((u) => ({
+          id: u.id,
+          score: Math.floor((u.balance + u.bank) / 100) + (winMap.get(u.id) ?? 0) * 50 + u.level * 200,
+        }))
+        .sort((a, b) => b.score - a.score);
+      const idx = scored.findIndex((u) => u.id === req.userId);
+      res.json({ rank: idx === -1 ? null : idx + 1 });
     } else {
       const allUsers = await prisma.user.findMany({
         where: { isBanned: false },

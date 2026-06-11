@@ -206,7 +206,15 @@ adminRouter.get("/bank", async (_req, res) => {
       take: 20,
     });
 
-    res.json({ chips: bank.chips, dollars: bank.dollars, houseIncome, totalWagered, totalPaidOut, transactions });
+    res.json({
+      chips: bank.chips,
+      liveChips: bank.chips + houseIncome,
+      dollars: bank.dollars,
+      houseIncome,
+      totalWagered,
+      totalPaidOut,
+      transactions,
+    });
   } catch (err) {
     console.error("GET /admin/bank error:", err);
     res.status(500).json({ error: "Failed to load bank" });

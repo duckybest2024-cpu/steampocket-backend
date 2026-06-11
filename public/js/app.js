@@ -3,7 +3,8 @@ const App = (() => {
   const state = { id: null, username: null, nickname: null, rank: "bronze", balance: 0, bank: 0, level: 1, xp: 0, fairness: null };
 
   const GAMES = [
-    { key: "crash", label: "🚀 Crash", mod: () => CrashGame },
+    { key: "crash",    label: "🚀 Crash",    mod: () => CrashGame },
+    { key: "coinflip", label: "🪙 Coinflip",  mod: () => CoinflipGame },
     { key: "dice", label: "🎲 Dice", mod: () => DiceGame },
     { key: "limbo", label: "📈 Limbo", mod: () => LimboGame },
     { key: "mines", label: "💣 Mines", mod: () => MinesGame },

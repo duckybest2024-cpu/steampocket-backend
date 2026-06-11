@@ -3,6 +3,7 @@ import { Server } from "socket.io";
 import { createApp } from "./app";
 import { config } from "./lib/config";
 import { CrashEngine } from "./sockets/crashEngine";
+import { CoinflipEngine } from "./sockets/coinflipEngine";
 
 // Keep the process alive on unexpected errors — log them so they show up in
 // the host's deploy logs instead of crash-looping the whole service.
@@ -21,6 +22,7 @@ const io = new Server(httpServer, {
 });
 
 new CrashEngine(io);
+new CoinflipEngine(io);
 
 httpServer.listen(config.port, () => {
   console.log(`🎰 Casino Aurelius listening on :${config.port}`);

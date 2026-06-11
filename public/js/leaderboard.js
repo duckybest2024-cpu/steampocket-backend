@@ -2,10 +2,11 @@ const LeaderboardGame = (() => {
   const MEDALS = ["🥇", "🥈", "🥉"];
 
   const TYPES = [
-    { key: "money",  label: "💰 Most Money" },
-    { key: "chips",  label: "🪙 Most Chips" },
-    { key: "wins",   label: "🏆 Most Wins" },
-    { key: "losses", label: "💀 Most Losses" },
+    { key: "money",   label: "💰 Most Money" },
+    { key: "chips",   label: "🪙 Most Chips" },
+    { key: "wins",    label: "🏆 Most Wins" },
+    { key: "losses",  label: "💀 Most Losses" },
+    { key: "overall", label: "⭐ Best Overall" },
   ];
 
   const RANK_INFO = {
@@ -88,12 +89,33 @@ const LeaderboardGame = (() => {
         <td style="${S.td}${S.levelCell}">Lv ${entry.level}</td>
       </tr>`;
     }
-    const val = type === "chips" ? entry.balance : entry.totalChips;
+    if (type === "overall") {
+      return `<tr style="${rs}">
+        <td style="${S.td}${S.rankCell}">${posLabel(entry.rank)}</td>
+        <td style="${S.td}${S.userCell}">${name}${selfTag}</td>
+        <td style="${S.td}">${badge}</td>
+        <td style="${S.td}${S.chipsCell}">${Math.floor((entry.totalChips || 0) / 100).toLocaleString()} 🪙</td>
+        <td style="${S.td}${S.winCell}">${(entry.wins || 0).toLocaleString()} 🏆</td>
+        <td style="${S.td}${S.levelCell}">Lv ${entry.level}</td>
+        <td style="${S.td}" style="color:var(--accent-2);font-weight:800;">${(entry.score || 0).toLocaleString()} ⭐</td>
+      </tr>`;
+    }
+    if (type === "money") {
+      return `<tr style="${rs}">
+        <td style="${S.td}${S.rankCell}">${posLabel(entry.rank)}</td>
+        <td style="${S.td}${S.userCell}">${name}${selfTag}</td>
+        <td style="${S.td}">${badge}</td>
+        <td style="${S.td}" style="color:var(--win);font-weight:800;">$${Math.floor((entry.totalChips || 0) / 100).toLocaleString()}</td>
+        <td style="${S.td}${S.levelCell}">Lv ${entry.level}</td>
+        <td style="${S.td}${S.betsCell}">${(entry.betCount || 0).toLocaleString()}</td>
+      </tr>`;
+    }
+    // chips
     return `<tr style="${rs}">
       <td style="${S.td}${S.rankCell}">${posLabel(entry.rank)}</td>
       <td style="${S.td}${S.userCell}">${name}${selfTag}</td>
       <td style="${S.td}">${badge}</td>
-      <td style="${S.td}${S.chipsCell}">${Math.floor((val || 0) / 100).toLocaleString()} 🪙</td>
+      <td style="${S.td}${S.chipsCell}">${Math.floor((entry.balance || 0) / 100).toLocaleString()} 🪙</td>
       <td style="${S.td}${S.levelCell}">Lv ${entry.level}</td>
       <td style="${S.td}${S.betsCell}">${(entry.betCount || 0).toLocaleString()}</td>
     </tr>`;
@@ -112,10 +134,24 @@ const LeaderboardGame = (() => {
         <th style="${S.th}">Badge</th><th style="${S.th}">Losses</th><th style="${S.th}">Level</th>
       </tr>`;
     }
+    if (type === "overall") {
+      return `<tr>
+        <th style="${S.th}">Rank</th><th style="${S.th}">Player</th>
+        <th style="${S.th}">Badge</th><th style="${S.th}">Chips</th>
+        <th style="${S.th}">Wins</th><th style="${S.th}">Level</th><th style="${S.th}">Score ⭐</th>
+      </tr>`;
+    }
+    if (type === "money") {
+      return `<tr>
+        <th style="${S.th}">Rank</th><th style="${S.th}">Player</th>
+        <th style="${S.th}">Badge</th><th style="${S.th}">Total Wealth</th>
+        <th style="${S.th}">Level</th><th style="${S.th}">Bets</th>
+      </tr>`;
+    }
     return `<tr>
       <th style="${S.th}">Rank</th><th style="${S.th}">Player</th>
       <th style="${S.th}">Badge</th>
-      <th style="${S.th}">${type === "chips" ? "Chips (In Play)" : "Total Chips"}</th>
+      <th style="${S.th}">Chips (In Play)</th>
       <th style="${S.th}">Level</th><th style="${S.th}">Bets</th>
     </tr>`;
   }
