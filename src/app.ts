@@ -19,6 +19,7 @@ import { adminRouter } from "./routes/admin";
 import { settingsRouter } from "./routes/settings";
 import { nftRouter } from "./routes/nfts";
 import { nftMarketRouter } from "./routes/nftmarket";
+import { casesRouter } from "./routes/cases";
 import { prisma } from "./lib/prisma";
 import { getLiqpayKeys, verifyLiqpayCallback, liqpayDecode } from "./lib/liqpay";
 import { CHIP_PACKAGES } from "./lib/stripe";
@@ -107,6 +108,7 @@ export function createApp() {
   app.use("/admin", adminRouter);
   app.use("/nfts", nftRouter);
   app.use("/nftmarket", nftMarketRouter);
+  app.use("/cases", casesRouter);
 
   // Public site config + active broadcasts
   app.get("/config", async (_req, res) => {

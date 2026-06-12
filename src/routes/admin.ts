@@ -568,3 +568,108 @@ adminRouter.delete("/nft/:id", async (req, res) => {
     res.json({ ok: true });
   } catch { res.status(404).json({ error: "Not found" }); }
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ANTI-CHEAT — flag management
+// ──────────────────────────────────────────────────────────────────────────────
+
+// GET /admin/flags — list all unresolved anticheat events with user info
+adminRouter.get("/flags", async (_req, res) => {
+  try {
+    const events = await (prisma as any).anticheatEvent.findMany({
+      where: { resolved: false },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    const userIds = [...new Set(events.map((e: any) => e.userId))] as string[];
+    const users = userIds.length
+      ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, username: true, balance: true, flagged: true, flagReason: true, flaggedAt: true, isBanned: true } })
+      : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    res.json({
+      events: events.map((e: any) => ({
+        ...e,
+        details: (() => { try { return JSON.parse(e.details); } catch { return {}; } })(),
+        user: userMap.get(e.userId) ?? null,
+      })),
+    });
+  } catch (err) {
+    console.error("GET /admin/flags error:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// GET /admin/flags/users — list flagged users
+adminRouter.get("/flags/users", async (_req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { flagged: true },
+      select: { id: true, username: true, email: true, balance: true, flagged: true, flagReason: true, flaggedAt: true, isBanned: true, createdAt: true },
+      orderBy: { flaggedAt: "desc" },
+    });
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// POST /admin/flags/:eventId/resolve — resolve a specific event
+adminRouter.post("/flags/:eventId/resolve", async (req: AuthedRequest, res) => {
+  const { resolution } = req.body as { resolution?: string };
+  try {
+    const event = await (prisma as any).anticheatEvent.update({
+      where: { id: req.params.eventId },
+      data: {
+        resolved: true,
+        resolvedAt: new Date(),
+        resolvedBy: req.userId,
+        resolution: resolution || "dismissed",
+      },
+    });
+
+    // If all events for user are resolved, unflag user
+    const remaining = await (prisma as any).anticheatEvent.count({
+      where: { userId: event.userId, resolved: false },
+    });
+    if (remaining === 0) {
+      await prisma.user.update({ where: { id: event.userId }, data: { flagged: false, flagReason: null } });
+    }
+
+    res.json({ ok: true, event });
+  } catch (err) {
+    console.error("POST /admin/flags/:eventId/resolve error:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// POST /admin/flags/user/:userId/clear — clear all flags for a user
+adminRouter.post("/flags/user/:userId/clear", async (req: AuthedRequest, res) => {
+  try {
+    await (prisma as any).anticheatEvent.updateMany({
+      where: { userId: req.params.userId, resolved: false },
+      data: { resolved: true, resolvedAt: new Date(), resolvedBy: req.userId, resolution: "cleared_by_admin" },
+    });
+    await prisma.user.update({
+      where: { id: req.params.userId },
+      data: { flagged: false, flagReason: null, flaggedAt: null },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// POST /admin/flags/user/:userId/ban — ban a flagged user
+adminRouter.post("/flags/user/:userId/ban", async (req: AuthedRequest, res) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.params.userId },
+      data: { isBanned: true, flagReason: "banned_by_admin" },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed" });
+  }
+});

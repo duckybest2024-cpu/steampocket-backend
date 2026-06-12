@@ -31,6 +31,11 @@ model User {
   emailToken       String?
   emailTokenExpiry DateTime?
 
+  // Anti-cheat
+  flagged       Boolean  @default(false)
+  flagReason    String?
+  flaggedAt     DateTime?
+
   bets              Bet[]
   transactions      Transaction[]
   seedHistory       SeedRotation[]
@@ -259,4 +264,46 @@ model Broadcast {
   type      String   @default("info")
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model CaseOpening {
+  id         String   @id @default(cuid())
+  userId     String
+  caseId     String
+  nftId      String
+  rarity     String
+  paidChips  Int
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([caseId])
+}
+
+model AnticheatEvent {
+  id          String    @id @default(cuid())
+  userId      String
+  reason      String
+  details     String    @default("{}")
+  resolved    Boolean   @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  resolution  String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([resolved])
+}
+
+model NftListing {
+  id         String    @id @default(cuid())
+  nftId      String    @unique
+  sellerId   String
+  priceChips Int
+  status     String    @default("active") // active | sold | cancelled
+  buyerId    String?
+  createdAt  DateTime  @default(now())
+  soldAt     DateTime?
+
+  @@index([sellerId])
+  @@index([status])
 }

@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { applyLedgerEntry, levelFromXp, xpForWager } from "./wallet";
+import { checkForSuspiciousActivity } from "./anticheat";
 
 export interface BetResolution {
   payout: number;
@@ -111,6 +112,17 @@ export async function placeBet(
       nonce: seeds.nonce,
       resolution,
     };
+  }).then(async (result) => {
+    // Fire-and-forget anti-cheat check on every win (never blocks the response)
+    if (result.resolution.result === "win") {
+      checkForSuspiciousActivity(prisma, userId, {
+        game,
+        amount,
+        payout: result.resolution.payout,
+        multiplier: result.resolution.multiplier,
+      }).catch(() => {});
+    }
+    return result;
   });
 }
 

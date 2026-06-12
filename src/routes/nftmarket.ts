@@ -346,3 +346,172 @@ nftMarketRouter.get("/search", async (req, res: Response) => {
     res.status(500).json({ error: "Search failed" });
   }
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// NFT SELLING (burn for chips — 50% of catalog price)
+// ──────────────────────────────────────────────────────────────────────────────
+
+// POST /nftmarket/sell/:nftId — requireAuth  (instant sell to house for 50% value)
+nftMarketRouter.post("/sell/:nftId", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const { nftId } = req.params;
+  const userId = req.userId!;
+
+  try {
+    const nft = await prisma.nft.findUnique({ where: { id: nftId } });
+    if (!nft) return res.status(404).json({ error: "NFT not found" });
+    if (nft.ownerId !== userId) return res.status(403).json({ error: "You do not own this NFT" });
+
+    // Cannot sell an actively listed NFT
+    const listing = await (prisma as any).nftListing?.findUnique?.({ where: { nftId } }).catch(() => null);
+    if (listing?.status === "active") {
+      return res.status(400).json({ error: "Cancel your marketplace listing before selling" });
+    }
+
+    // Determine payout: 50% of catalog priceChips, minimum 1 chip
+    let payoutChips = 1;
+    try {
+      const desc = JSON.parse(nft.description);
+      const template = NFT_CATALOG.find((t) => t.id === desc.templateId);
+      if (template) payoutChips = Math.max(1, Math.floor(template.priceChips * 0.5));
+    } catch { /* use default */ }
+
+    // Delete NFT and credit chips in one transaction
+    await prisma.$transaction(async (tx) => {
+      await tx.nft.delete({ where: { id: nftId } });
+      await tx.tradeOfferItem.deleteMany({ where: { nftId } });
+    });
+
+    await applyLedgerEntry(prisma, userId, "nft_sell", payoutChips * 100, nftId);
+
+    const updatedUser = await prisma.user.findUnique({ where: { id: userId } });
+    const balance = (updatedUser?.balance ?? 0) / 100;
+
+    return res.json({ success: true, payoutChips, balance });
+  } catch (err) {
+    console.error("POST /nftmarket/sell/:nftId error:", err);
+    return res.status(500).json({ error: "Failed to sell NFT" });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// P2P MARKETPLACE LISTINGS
+// ──────────────────────────────────────────────────────────────────────────────
+
+// GET /nftmarket/listings — public, returns all active listings with NFT details
+nftMarketRouter.get("/listings", async (_req, res: Response) => {
+  try {
+    const listings = await (prisma as any).nftListing.findMany({
+      where: { status: "active" },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+
+    const nftIds = listings.map((l: any) => l.nftId);
+    const nfts = nftIds.length
+      ? await prisma.nft.findMany({ where: { id: { in: nftIds } } })
+      : [];
+    const nftMap = new Map(nfts.map((n) => [n.id, n]));
+
+    const result = listings.map((l: any) => ({
+      ...l,
+      nft: nftMap.get(l.nftId) ?? null,
+    }));
+
+    res.json({ listings: result });
+  } catch (err) {
+    console.error("GET /nftmarket/listings error:", err);
+    res.status(500).json({ error: "Failed to fetch listings" });
+  }
+});
+
+// POST /nftmarket/list — requireAuth  (create a P2P listing)
+nftMarketRouter.post("/list", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const schema = z.object({ nftId: z.string(), priceChips: z.number().int().min(1) });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "nftId and priceChips required" });
+
+  const { nftId, priceChips } = parsed.data;
+  const userId = req.userId!;
+
+  try {
+    const nft = await prisma.nft.findUnique({ where: { id: nftId } });
+    if (!nft) return res.status(404).json({ error: "NFT not found" });
+    if (nft.ownerId !== userId) return res.status(403).json({ error: "You do not own this NFT" });
+
+    // Check not already listed
+    const existing = await (prisma as any).nftListing.findUnique({ where: { nftId } });
+    if (existing?.status === "active") return res.status(409).json({ error: "Already listed" });
+
+    const listing = await (prisma as any).nftListing.upsert({
+      where: { nftId },
+      update: { priceChips, status: "active", soldAt: null, buyerId: null },
+      create: { nftId, sellerId: userId, priceChips, status: "active" },
+    });
+
+    return res.json({ listing });
+  } catch (err) {
+    console.error("POST /nftmarket/list error:", err);
+    return res.status(500).json({ error: "Failed to create listing" });
+  }
+});
+
+// DELETE /nftmarket/list/:listingId — requireAuth  (cancel your listing)
+nftMarketRouter.delete("/list/:listingId", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const { listingId } = req.params;
+  const userId = req.userId!;
+
+  try {
+    const listing = await (prisma as any).nftListing.findUnique({ where: { id: listingId } });
+    if (!listing) return res.status(404).json({ error: "Listing not found" });
+    if (listing.sellerId !== userId) return res.status(403).json({ error: "Not your listing" });
+    if (listing.status !== "active") return res.status(400).json({ error: "Listing is not active" });
+
+    await (prisma as any).nftListing.update({ where: { id: listingId }, data: { status: "cancelled" } });
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("DELETE /nftmarket/list/:listingId error:", err);
+    return res.status(500).json({ error: "Failed to cancel listing" });
+  }
+});
+
+// POST /nftmarket/buy-listing/:listingId — requireAuth  (buy from P2P listing)
+nftMarketRouter.post("/buy-listing/:listingId", requireAuth, async (req: AuthedRequest, res: Response) => {
+  const { listingId } = req.params;
+  const buyerId = req.userId!;
+
+  try {
+    const listing = await (prisma as any).nftListing.findUnique({ where: { id: listingId } });
+    if (!listing || listing.status !== "active") return res.status(404).json({ error: "Listing not found or already sold" });
+    if (listing.sellerId === buyerId) return res.status(400).json({ error: "Cannot buy your own listing" });
+
+    const nft = await prisma.nft.findUnique({ where: { id: listing.nftId } });
+    if (!nft || nft.ownerId !== listing.sellerId) return res.status(409).json({ error: "NFT ownership changed" });
+
+    const buyer = await prisma.user.findUnique({ where: { id: buyerId } });
+    if (!buyer || buyer.balance < listing.priceChips * 100) {
+      return res.status(400).json({ error: "Insufficient balance" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Transfer ownership
+      await tx.nft.update({ where: { id: listing.nftId }, data: { ownerId: buyerId } });
+      // Mark listing sold
+      await (tx as any).nftListing.update({
+        where: { id: listingId },
+        data: { status: "sold", buyerId, soldAt: new Date() },
+      });
+    });
+
+    // Debit buyer, credit seller
+    await applyLedgerEntry(prisma, buyerId, "nft_buy_p2p", -(listing.priceChips * 100), listingId);
+    await applyLedgerEntry(prisma, listing.sellerId, "nft_sell_p2p", listing.priceChips * 100, listingId);
+
+    const updatedUser = await prisma.user.findUnique({ where: { id: buyerId } });
+    const balance = (updatedUser?.balance ?? 0) / 100;
+
+    return res.json({ success: true, nft, balance });
+  } catch (err) {
+    console.error("POST /nftmarket/buy-listing error:", err);
+    return res.status(500).json({ error: "Failed to purchase listing" });
+  }
+});
