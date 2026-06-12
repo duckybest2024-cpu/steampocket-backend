@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  casino:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: "file:/data/casino.db"
+      # Change this to a long random string before sharing with others:
+      JWT_SECRET: "casino-aurelius-local-secret-change-me"
+      # Optional — leave blank to disable real payments:
+      # STRIPE_SECRET_KEY: ""
+      # LIQPAY_PUBLIC_KEY: ""
+      # LIQPAY_PRIVATE_KEY: ""
+    volumes:
+      # SQLite database lives here so it survives container restarts
+      - casino_data:/data
+    restart: unless-stopped
+
+volumes:
+  casino_data:
