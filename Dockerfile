@@ -30,5 +30,5 @@ COPY public ./public/
 
 EXPOSE 3000
 
-# Sync schema (ignore failures if DB isn't ready yet) then start server
-CMD ["sh", "-c", "(npx prisma db push --skip-generate --accept-data-loss || echo 'DB push warning, continuing...') && node dist/server.js"]
+# Create DB dir, push schema, start server
+CMD ["sh", "-c", "mkdir -p /data && npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]
