@@ -145,6 +145,32 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 
 /* ── SHOP ── */
 .sgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+
+/* ── CRYPTO ── */
+.crypto-toolbar{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+.crypto-search{flex:1;background:var(--elev);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);font-size:.9rem;outline:none;-webkit-appearance:none}
+.crypto-search:focus{border-color:var(--acc)}
+.crypto-search::placeholder{color:var(--dim)}
+.crypto-sort{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.cs-btn{padding:6px 11px;background:var(--elev);border:1px solid var(--border);border-radius:7px;color:var(--dim);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap;transition:border-color .12s,color .12s}
+.cs-btn.on{border-color:var(--acc);color:var(--acc);background:rgba(52,211,153,.07)}
+.crypto-list{display:flex;flex-direction:column}
+.crypto-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(45,69,90,.55)}
+.cr-rank{width:22px;font-size:.66rem;color:var(--dim);font-weight:700;text-align:right;flex-shrink:0}
+.cr-icon{width:30px;height:30px;border-radius:50%;flex-shrink:0;object-fit:cover;background:var(--border)}
+.cr-info{flex:1;min-width:0}
+.cr-name{font-size:.86rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cr-sym{font-size:.63rem;color:var(--dim);font-weight:600;text-transform:uppercase;margin-top:1px}
+.cr-right{text-align:right;flex-shrink:0;min-width:72px}
+.cr-pval{font-size:.86rem;font-weight:700}
+.cr-chg{font-size:.7rem;font-weight:700;margin-top:1px}
+.cr-chg.up{color:var(--win)}.cr-chg.dn{color:var(--loss)}
+.cr-mcap{font-size:.62rem;color:var(--dim);margin-top:1px}
+.crypto-status{text-align:center;font-size:.68rem;color:var(--dim);padding:4px 0 8px}
+.crypto-loading{text-align:center;padding:44px 16px;color:var(--dim);font-size:.9rem}
+.crypto-err{text-align:center;padding:30px 16px;color:var(--loss);font-size:.85rem;font-weight:600}
+.cr-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
+.cr-bar-fill{height:100%;border-radius:2px;background:var(--acc);transition:width .4s}
 .scard{background:var(--elev);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;transition:border-color .12s}
 .scard:active{border-color:var(--acc)}
 .se{font-size:2rem;margin-bottom:4px}
@@ -205,10 +231,11 @@ function getbet(id) {
 const showRes = (id, msg, w) => { const e = document.getElementById(id); if (!e) return; e.textContent = msg; e.className = 'res on ' + (w ? 'w' : 'l'); };
 
 // ── Navigation ───────────────────────────────────────────────────────────────
-let crashIv = null, crashRunning = false;
+let crashIv = null, crashRunning = false, cryptoTimer = null;
 
 function goHome() {
   crashRunning = false; clearInterval(crashIv);
+  clearInterval(cryptoTimer); cryptoTimer = null;
   document.getElementById('back-btn').style.display = 'none';
   document.getElementById('hdr-title').textContent = '🎰 Casino Aurelius';
   renderLobby();
@@ -235,6 +262,7 @@ const CARDS = [
   { key:'limbo',  name:'Limbo',     emoji:'📈', tag:'Pick your multiplier', bg:'linear-gradient(135deg,#1a3a10,#16a34a)' },
   { key:'keno',   name:'Keno',      emoji:'🎯', tag:'Pick your lucky nums', bg:'linear-gradient(135deg,#3a1a00,#ea580c)' },
   { key:'shop',   name:'Chip Shop', emoji:'🏦', tag:'Top up your balance',  bg:'linear-gradient(135deg,#2a2a00,#ca8a04)' },
+  { key:'crypto', name:'Crypto',    emoji:'₿',  tag:'Live prices · top 100', bg:'linear-gradient(135deg,#0a1f3a,#0369a1)' },
 ];
 
 function renderLobby() {
@@ -941,11 +969,133 @@ function gameShop() {
   window.resetC = () => { setBal(1000); toast('Reset to 1,000 chips'); document.getElementById('shop-bal').textContent = fmt(bal) + ' 🪙'; };
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// CRYPTO — Live prices via CoinGecko public API
+// ════════════════════════════════════════════════════════════════════════════
+function gameCrypto() {
+  let allCoins = [], filtered = [], sortKey = 'rank', sortDir = 1, searchQ = '';
+
+  gs().innerHTML = `
+    <div class="c" style="padding:11px">
+      <div class="crypto-toolbar">
+        <input class="crypto-search" id="cg-q" placeholder="🔍 Search name or symbol…" oninput="cgSearch(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button class="qb" id="cg-rfsh" onclick="cgFetch()" style="flex-shrink:0;font-size:1rem;padding:10px 13px">↻</button>
+      </div>
+      <div class="crypto-sort">
+        <div class="cs-btn on" data-sk="rank"   onclick="cgSort('rank',this)"># Rank</div>
+        <div class="cs-btn"   data-sk="price"   onclick="cgSort('price',this)">Price</div>
+        <div class="cs-btn"   data-sk="change"  onclick="cgSort('change',this)">24h %</div>
+        <div class="cs-btn"   data-sk="cap"     onclick="cgSort('cap',this)">Mkt Cap</div>
+        <div class="cs-btn"   data-sk="volume"  onclick="cgSort('volume',this)">Volume</div>
+      </div>
+      <div id="cg-status" class="crypto-status"></div>
+      <div id="cg-list" class="crypto-list"><div class="crypto-loading">⏳ Loading live prices…</div></div>
+    </div>`;
+
+  // ── Format helpers ──
+  function fmtP(p) {
+    if (!p && p !== 0) return '—';
+    if (p >= 100000) return '$' + (p/1000).toLocaleString('en',{maximumFractionDigits:0}) + 'K';
+    if (p >= 1000)   return '$' + p.toLocaleString('en',{maximumFractionDigits:0});
+    if (p >= 1)      return '$' + p.toFixed(2);
+    if (p >= 0.01)   return '$' + p.toFixed(4);
+    if (p >= 0.0001) return '$' + p.toFixed(6);
+    return '$' + p.toExponential(2);
+  }
+  function fmtCap(c) {
+    if (!c) return '—';
+    if (c >= 1e12) return '$' + (c/1e12).toFixed(2) + 'T';
+    if (c >= 1e9)  return '$' + (c/1e9).toFixed(1)  + 'B';
+    if (c >= 1e6)  return '$' + (c/1e6).toFixed(1)  + 'M';
+    return '$' + c.toLocaleString('en',{maximumFractionDigits:0});
+  }
+  function fmtVol(v) { return fmtCap(v); }
+
+  // ── Render ──
+  function renderList() {
+    const list = document.getElementById('cg-list'); if (!list) return;
+    if (!filtered.length) { list.innerHTML = '<div class="crypto-loading">No coins match.</div>'; return; }
+    let data = [...filtered];
+    const mul = sortDir;
+    if (sortKey === 'rank')   data.sort((a,b) => ((a.market_cap_rank||999) - (b.market_cap_rank||999)) * mul);
+    if (sortKey === 'price')  data.sort((a,b) => (b.current_price - a.current_price) * mul);
+    if (sortKey === 'change') data.sort((a,b) => ((b.price_change_percentage_24h||0) - (a.price_change_percentage_24h||0)) * mul);
+    if (sortKey === 'cap')    data.sort((a,b) => ((b.market_cap||0) - (a.market_cap||0)) * mul);
+    if (sortKey === 'volume') data.sort((a,b) => ((b.total_volume||0) - (a.total_volume||0)) * mul);
+    list.innerHTML = data.map(c => {
+      const chg = c.price_change_percentage_24h || 0;
+      const up  = chg >= 0;
+      const chgStr = (up ? '+' : '') + chg.toFixed(2) + '%';
+      return `<div class="crypto-row">
+        <div class="cr-rank">${c.market_cap_rank || '—'}</div>
+        <img class="cr-icon" src="${c.image}" loading="lazy" onerror="this.src='';this.style.background='#2d4a5a';this.style.borderRadius='50%'" alt="${c.symbol}">
+        <div class="cr-info">
+          <div class="cr-name">${c.name}</div>
+          <div class="cr-sym">${c.symbol}</div>
+        </div>
+        <div class="cr-right">
+          <div class="cr-pval">${fmtP(c.current_price)}</div>
+          <div class="cr-chg ${up?'up':'dn'}">${chgStr}</div>
+          <div class="cr-mcap">${fmtCap(c.market_cap)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Fetch from CoinGecko ──
+  window.cgFetch = async () => {
+    const btn = document.getElementById('cg-rfsh');
+    const st  = document.getElementById('cg-status');
+    if (btn) { btn.textContent = '…'; btn.disabled = true; }
+    if (st)  st.textContent = 'Fetching…';
+    try {
+      // Fetch two pages of 50 to get 100 coins total
+      const [r1, r2] = await Promise.all([
+        fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false&price_change_percentage=24h'),
+        fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=2&sparkline=false&price_change_percentage=24h'),
+      ]);
+      if (!r1.ok || !r2.ok) throw new Error('API error ' + (r1.status || r2.status));
+      const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+      allCoins = [...d1, ...d2];
+      applySearch();
+      if (st) st.textContent = '✓ Updated ' + new Date().toLocaleTimeString() + ' · ' + allCoins.length + ' coins';
+    } catch (err) {
+      if (st) st.textContent = '⚠ ' + (err.message || 'Update failed') + ' — will retry';
+      const list = document.getElementById('cg-list');
+      if (list && !allCoins.length) list.innerHTML = `<div class="crypto-err">⚠ Could not load prices.<br><small style="font-weight:400;color:var(--dim)">Requires internet. CoinGecko may be rate-limiting — try again in a moment.</small><br><br><button class="btn g" style="max-width:180px;margin:0 auto" onclick="cgFetch()">Retry</button></div>`;
+    }
+    if (btn) { btn.textContent = '↻'; btn.disabled = false; }
+  };
+
+  function applySearch() {
+    filtered = searchQ
+      ? allCoins.filter(c => c.name.toLowerCase().includes(searchQ) || c.symbol.toLowerCase().includes(searchQ))
+      : [...allCoins];
+    renderList();
+  }
+
+  window.cgSearch = q => { searchQ = q.toLowerCase().trim(); applySearch(); };
+
+  window.cgSort = (key, el) => {
+    if (sortKey === key) { sortDir *= -1; }
+    else { sortKey = key; sortDir = 1; }
+    document.querySelectorAll('.cs-btn').forEach(b => b.classList.remove('on'));
+    el.classList.add('on');
+    renderList();
+  };
+
+  cgFetch();
+  clearInterval(cryptoTimer);
+  // Auto-refresh every 60 s while screen is visible
+  cryptoTimer = setInterval(() => { if (document.getElementById('cg-list')) cgFetch(); else clearInterval(cryptoTimer); }, 60000);
+}
+
 // ── Router ───────────────────────────────────────────────────────────────────
 const GAMES = {
   dice: gameDice, crash: gameCrash, mines: gameMines, bj: gameBJ,
   slots: gameSlots, rou: gameRou, plinko: gamePlinko, wheel: gameWheel,
-  hilo: gameHilo, limbo: gameLimbo, keno: gameKeno, shop: gameShop
+  hilo: gameHilo, limbo: gameLimbo, keno: gameKeno, shop: gameShop,
+  crypto: gameCrypto
 };
 
 // Start on lobby
