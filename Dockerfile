@@ -30,5 +30,5 @@ COPY public ./public/
 
 EXPOSE 3000
 
-# Create DB dir, push schema, start server
-CMD ["sh", "-c", "mkdir -p /data && npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]
+# Push schema then start server
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]
