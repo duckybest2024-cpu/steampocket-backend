@@ -34,7 +34,7 @@ authRouter.post("/register", async (req, res) => {
         username,
         email,
         passwordHash,
-        balance: config.startingBalance,
+        balance: 0,
         serverSeed: seedPair.serverSeed,
         serverSeedHash: seedPair.serverSeedHash,
         clientSeed: seedPair.clientSeed,
@@ -42,14 +42,10 @@ authRouter.post("/register", async (req, res) => {
       },
     });
 
-    await prisma.transaction.create({
-      data: { userId: user.id, type: "bonus", amount: config.startingBalance, balance: config.startingBalance, reference: "welcome_bonus" },
-    });
-
     res.status(201).json({
       token: signToken(user.id),
       user: publicUser({ ...user, emailVerified: true }),
-      message: "Account created! Welcome to Casino Aurelius.",
+      message: "Account created! Purchase chips to start playing.",
     });
   } catch (err: any) {
     if (err?.code === "P2002") {
