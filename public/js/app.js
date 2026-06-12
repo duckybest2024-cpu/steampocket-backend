@@ -38,6 +38,12 @@ const App = (() => {
       ],
     },
     {
+      section: "Board Games",
+      items: [
+        { key: "boardgames",  icon: "♟️", label: "Board Games",      mod: () => BoardGamesGame },
+      ],
+    },
+    {
       section: "Account",
       items: [
         { key: "nfts",        icon: "🖼️", label: "NFT Collection",   mod: () => NFTsGame },

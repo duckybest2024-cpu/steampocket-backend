@@ -7,6 +7,7 @@ import { CoinflipEngine } from "./sockets/coinflipEngine";
 import { JackpotEngine } from "./sockets/jackpotEngine";
 import { HorseRaceEngine } from "./sockets/horseRaceEngine";
 import { attachBattleDice, attachRPS, attachRaffle, attachBingo, attachTower, attachMultiRoulette, attachPoker } from "./sockets/multiplayerGamesEngine";
+import { attachBoardGames } from "./sockets/boardGamesEngine";
 
 process.on("uncaughtException", (err) => {
   console.error("FATAL uncaughtException (continuing):", err);
@@ -33,6 +34,7 @@ attachBingo(io);
 attachTower(io);
 attachMultiRoulette(io);
 attachPoker(io);
+attachBoardGames(io);
 
 httpServer.listen(config.port, () => {
   console.log(`🎰 Casino Aurelius listening on :${config.port}`);

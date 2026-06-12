@@ -49,10 +49,16 @@ export async function placeBet(
     // 2. Resolve the round deterministically from the current seed triple.
     const resolution = resolve(seeds);
 
-    // 3. Pay out (if anything was won).
+    // 3. Pay out (if anything was won), applying 5% rake on net profit.
     let afterPayout = await tx.user.findUniqueOrThrow({ where: { id: userId } });
     if (resolution.payout > 0) {
-      afterPayout = await applyLedgerEntry(tx, userId, "payout", resolution.payout, undefined);
+      let creditAmount = resolution.payout;
+      const netProfit = resolution.payout - amount;
+      if (netProfit > 0) {
+        // 5% rake on net winnings (house cut, not recorded separately)
+        creditAmount = resolution.payout - Math.floor(netProfit * 0.05);
+      }
+      afterPayout = await applyLedgerEntry(tx, userId, "payout", creditAmount, undefined);
     }
 
     // 4. XP / leveling from wager volume (win or lose, the house always rewards action).

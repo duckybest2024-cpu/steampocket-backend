@@ -307,3 +307,18 @@ model NftListing {
   @@index([sellerId])
   @@index([status])
 }
+
+model BoardGameRoom {
+  id         String   @id @default(cuid())
+  game       String   // chess | checkers | battleship | durak | wildcards | poker | bridge | monopoly
+  status     String   @default("waiting") // waiting | playing | finished
+  betChips   Int
+  maxPlayers Int      @default(2)
+  players    String   @default("[]") // JSON array
+  winnerId   String?
+  state      String   @default("{}") // JSON game state
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([game, status])
+}

@@ -154,6 +154,7 @@ walletRouter.post("/liqpay-checkout", requireAuth, async (req: AuthedRequest, re
     const { currency } = parsed.data;
     const pkg = CHIP_PACKAGES.find((p) => p.id === parsed.data.packageId);
     if (!pkg) return res.status(400).json({ error: "Invalid package" });
+    if (pkg.priceCents < 500) return res.status(400).json({ error: "Minimum deposit is $5" });
 
     const origin = `${req.protocol}://${req.get("host")}`;
     const orderId = `${req.userId!}_${pkg.id}_${Date.now()}`;
@@ -227,6 +228,11 @@ walletRouter.post("/cashout-chips", requireAuth, async (req: AuthedRequest, res)
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
 
     if (user.balance <= 0) return res.status(400).json({ error: "No chips to cash out" });
+
+    const MIN_CASHOUT_CENTS = 5000; // 50 chips minimum
+    if (user.balance < MIN_CASHOUT_CENTS) {
+      return res.status(400).json({ error: `Minimum cashout is 50 chips (you have ${Math.floor(user.balance / 100)})` });
+    }
 
     const amount = user.balance;
     const updated = await prisma.$transaction(async (tx) => {
