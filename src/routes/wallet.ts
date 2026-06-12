@@ -25,56 +25,6 @@ walletRouter.get("/transactions", requireAuth, async (req: AuthedRequest, res) =
   res.json({ items, page, pageSize, total });
 });
 
-const faucetSchema = z.object({ amount: z.number().int().min(100).max(1_000_000) });
-
-/**
- * Play-money faucet — lets a player top up their demo balance directly (no real payment rails here).
- * Capped per request and rate-limited implicitly by requiring the balance to be below a threshold,
- * so it tops up rather than becoming an infinite-money cheat.
- */
-walletRouter.post("/faucet", requireAuth, async (req: AuthedRequest, res) => {
-  const parsed = faucetSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.userId! } });
-  if (user.balance > 50_000) {
-    return res.status(429).json({ error: "Faucet only available below a $500 balance" });
-  }
-
-  const updated = await applyLedgerEntry(prisma, user.id, "deposit", parsed.data.amount, "faucet_topup");
-  res.json({ balance: updated.balance });
-});
-
-// ---------------------------------------------------------------------------
-// Emergency free chips — 20 chips when balance ≤ 10 chips, once per 24 hours
-// ---------------------------------------------------------------------------
-
-walletRouter.post("/free-chips", requireAuth as any, async (req: AuthedRequest, res) => {
-  try {
-    const userId = req.userId!;
-    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
-
-    if (user.balance > 1_000) {
-      return res.status(400).json({ error: "Free chips are only available when you have 10 chips or fewer" });
-    }
-
-    const recent = await prisma.transaction.findFirst({
-      where: { userId, type: "free_chips", createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
-    });
-    if (recent) {
-      const retryMs = 24 * 60 * 60 * 1000 - (Date.now() - recent.createdAt.getTime());
-      const retryHours = Math.ceil(retryMs / (60 * 60 * 1000));
-      return res.status(429).json({ error: `Come back in ~${retryHours}h for another free chip claim` });
-    }
-
-    const updated = await applyLedgerEntry(prisma, userId, "free_chips", 2_000, "emergency_chips");
-    res.json({ balance: updated.balance, awarded: 2_000 });
-  } catch (err) {
-    console.error("Free chips error:", err);
-    res.status(500).json({ error: "Failed to award free chips" });
-  }
-});
-
 // ---------------------------------------------------------------------------
 // Stripe checkout — create a hosted payment session for a chip package
 // ---------------------------------------------------------------------------

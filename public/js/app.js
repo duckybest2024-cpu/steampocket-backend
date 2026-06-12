@@ -38,6 +38,12 @@ const App = (() => {
       ],
     },
     {
+      section: "Arcade",
+      items: [
+        { key: "arcade",      icon: "🕹️", label: "Arcade",            mod: () => ArcadeGame },
+      ],
+    },
+    {
       section: "Board Games",
       items: [
         { key: "boardgames",  icon: "♟️", label: "Board Games",      mod: () => BoardGamesGame },
@@ -198,7 +204,7 @@ const App = (() => {
 
     if (state.balance <= 1000 && !_lowBalanceToastShown) {
       _lowBalanceToastShown = true;
-      setTimeout(() => UI.toast("⚡ Low balance — visit 🏦 Chip Shop to claim free chips!", "info"), 800);
+      setTimeout(() => UI.toast("⚡ Low balance — visit 🏦 Chip Shop to buy more chips!", "info"), 800);
     }
 
     return user;

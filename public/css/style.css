@@ -474,3 +474,130 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
   .tb-amount { font-size: 0.85rem; }
   .topbar-logout { font-size: 0.75rem; padding: 6px 10px; }
 }
+
+/* ── Arcade ──────────────────────────────────────────────── */
+.arcade-lobby-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 10px;
+  padding: 12px 20px 24px;
+}
+.arcade-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 10px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.arcade-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--ac, var(--accent));
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+}
+.arcade-card-emoji { font-size: 2.4rem; line-height: 1; }
+.arcade-card-name  { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.arcade-card-desc  { font-size: 0.7rem; color: var(--text-dim); line-height: 1.3; }
+.arcade-card-play  { font-size: 0.72rem; color: var(--ac, var(--accent)); font-weight: 700; margin-top: 4px; }
+
+/* Game visual container */
+.arcade-visual {
+  flex: 1;
+  min-height: 280px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, background 0.3s;
+}
+.arcade-visual[data-state="win"]  { border-color: var(--win);  background: rgba(52,211,153,0.06); animation: arc-pulse-win 0.6s ease-out; }
+.arcade-visual[data-state="loss"] { border-color: var(--loss); background: rgba(239,68,68,0.06); }
+
+.av-main-emoji  { font-size: 4rem; transition: transform 0.3s; }
+.av-status      { font-size: 0.95rem; font-weight: 600; color: var(--text); text-align: center; padding: 0 16px; }
+
+/* Playing state — spin main emoji */
+.arcade-visual[data-state="playing"] .av-main-emoji { animation: av-spin 0.5s linear infinite; }
+.arcade-visual[data-state="win"]     .av-main-emoji { animation: av-bounce 0.4s ease-out; font-size: 5rem; }
+
+/* Claw machine */
+.av-claw-machine  { position: relative; width: 180px; height: 160px; background: var(--bg-card); border: 2px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
+.av-claw-arm      { display: flex; flex-direction: column; align-items: center; }
+.av-claw-cable    { width: 3px; height: 40px; background: var(--border); }
+.av-claw-head     { font-size: 1.8rem; }
+.av-claw-prizes   { font-size: 1.4rem; letter-spacing: 2px; text-align: center; padding: 4px 8px; line-height: 1.6; }
+.av-claw-glass    { position: absolute; inset: 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); pointer-events: none; }
+.arcade-visual[data-state="playing"] .av-claw-arm { animation: av-claw-drop 0.8s ease-in-out infinite alternate; }
+
+/* Spin (gacha) */
+.av-spin-dial  { position: relative; width: 130px; height: 130px; }
+.av-spin-ring  { position: absolute; inset: 0; border-radius: 50%; border: 4px solid var(--ac, var(--accent)); opacity: 0.4; }
+.av-spin-inner { position: absolute; inset: 10px; border-radius: 50%; background: var(--bg-card); display: flex; align-items: center; justify-content: center; }
+.arcade-visual[data-state="playing"] .av-spin-dial { animation: av-rotate 0.3s linear infinite; }
+
+/* Drop zone */
+.av-drop-zone     { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.av-drop-item     { transition: transform 0.4s; }
+.av-drop-platform { display: flex; gap: 10px; font-size: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+.arcade-visual[data-state="playing"] .av-drop-item { animation: av-drop 0.6s ease-in infinite; }
+
+/* Burst zone */
+.av-burst-zone   { position: relative; width: 160px; height: 140px; display: flex; align-items: center; justify-content: center; }
+.av-burst-target { font-size: 4rem; }
+.arcade-visual[data-state="playing"] .av-burst-target { animation: av-pulse 0.4s ease-in-out infinite alternate; }
+
+/* Stack zone */
+.av-stack-zone   { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.av-stack-blocks { display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; }
+.av-block        { font-size: 2rem; }
+.arcade-visual[data-state="playing"] .av-block { animation: av-slide 0.4s ease-in-out var(--d, 0s) infinite alternate; }
+
+/* Arc zone */
+.av-arc-zone { position: relative; width: 180px; height: 150px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 16px; }
+.av-hoop     { font-size: 3rem; align-self: flex-start; }
+.av-ball     { font-size: 2.5rem; }
+.arcade-visual[data-state="playing"] .av-ball { animation: av-arc 0.9s ease-in-out infinite; }
+
+/* Mole grid */
+.av-mole-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.av-mole-hole { width: 52px; height: 52px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.av-mole      { font-size: 1.8rem; transform: translateY(100%); transition: transform 0.2s; }
+.arcade-visual[data-state="playing"] .av-mole { animation: av-mole-pop 0.6s ease-in-out infinite; }
+
+/* Meter */
+.av-meter-zone   { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 80%; }
+.av-meter-bar    { position: relative; width: 100%; height: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.av-meter-fill   { height: 100%; width: 0; background: linear-gradient(90deg, var(--win), #fbbf24, var(--loss)); border-radius: 12px; transition: width 0.3s; }
+.av-meter-needle { position: absolute; top: 0; bottom: 0; width: 3px; background: #fff; border-radius: 2px; left: 0; transition: left 0.1s; }
+.av-meter-labels { display: flex; justify-content: space-between; width: 100%; font-size: 0.7rem; color: var(--text-dim); }
+.arcade-visual[data-state="playing"] .av-meter-fill { animation: av-meter-fill 0.5s ease-in-out infinite alternate; }
+.arcade-visual[data-state="playing"] .av-meter-needle { animation: av-meter-needle 0.5s ease-in-out infinite alternate; }
+
+/* Keyframes */
+@keyframes av-spin      { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes av-bounce    { 0%{transform:scale(1)} 30%{transform:scale(1.35)} 60%{transform:scale(0.9)} 100%{transform:scale(1)} }
+@keyframes av-rotate    { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes av-drop      { 0%{transform:translateY(-30px);opacity:0} 60%{transform:translateY(0);opacity:1} 100%{transform:translateY(0)} }
+@keyframes av-pulse     { from { transform: scale(1); } to { transform: scale(1.15); } }
+@keyframes av-slide     { from { transform: translateX(-8px); } to { transform: translateX(8px); } }
+@keyframes av-arc       { 0%{transform:translate(0,0)} 50%{transform:translate(60px,-60px)} 100%{transform:translate(120px,0)} }
+@keyframes av-mole-pop  { 0%,100%{transform:translateY(100%)} 40%,60%{transform:translateY(0)} }
+@keyframes av-meter-fill   { from { width: 10%; } to { width: 90%; } }
+@keyframes av-meter-needle { from { left: 10%; } to { left: 90%; } }
+@keyframes av-claw-drop { from { transform: translateY(0); } to { transform: translateY(40px); } }
+@keyframes arc-pulse-win { 0%{box-shadow:0 0 0 0 rgba(52,211,153,0.5)} 100%{box-shadow:0 0 0 18px rgba(52,211,153,0)} }
+
+@media (max-width: 700px) {
+  .arcade-lobby-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); padding: 10px 14px 20px; }
+}
