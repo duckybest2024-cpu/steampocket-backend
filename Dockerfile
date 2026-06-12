@@ -30,5 +30,5 @@ COPY public ./public/
 
 EXPOSE 3000
 
-# Run migrations then start the server
-CMD ["sh", "-c", "DATABASE_URL=${DATABASE_URL:-file:/data/casino.db} npx prisma migrate deploy && node dist/server.js"]
+# Sync schema to the database (creates tables on first boot) then start
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]

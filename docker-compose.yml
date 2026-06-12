@@ -7,17 +7,32 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
-      DATABASE_URL: "file:/data/casino.db"
+      DATABASE_URL: "postgresql://casino:casino@db:5432/casino"
       # Change this to a long random string before sharing with others:
       JWT_SECRET: "casino-aurelius-local-secret-change-me"
       # Optional — leave blank to disable real payments:
       # STRIPE_SECRET_KEY: ""
       # LIQPAY_PUBLIC_KEY: ""
       # LIQPAY_PRIVATE_KEY: ""
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: casino
+      POSTGRES_PASSWORD: casino
+      POSTGRES_DB: casino
     volumes:
-      # SQLite database lives here so it survives container restarts
-      - casino_data:/data
+      - casino_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casino"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
 volumes:
-  casino_data:
+  casino_pgdata:
