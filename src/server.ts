@@ -16,28 +16,48 @@ process.on("unhandledRejection", (reason) => {
   console.error("FATAL unhandledRejection (continuing):", reason);
 });
 
-const app = createApp();
-const httpServer = http.createServer(app);
+import { prisma } from "./lib/prisma";
 
-const io = new Server(httpServer, {
-  cors: { origin: "*" },
-});
+async function waitForDb(retries = 10): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await prisma.$connect();
+      console.log("✅ Database connected");
+      return;
+    } catch {
+      console.log(`⏳ Waiting for database... (${i + 1}/${retries})`);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+  console.error("❌ Could not connect to database — starting anyway");
+}
 
-new CrashEngine(io);
-new CoinflipEngine(io);
-new JackpotEngine(io);
-new HorseRaceEngine(io);
-attachBattleDice(io);
-attachRPS(io);
-attachRaffle(io);
-attachBingo(io);
-attachTower(io);
-attachMultiRoulette(io);
-attachPoker(io);
-attachBoardGames(io);
+(async () => {
+  await waitForDb();
 
-httpServer.listen(config.port, () => {
-  console.log(`🎰 Casino Aurelius listening on :${config.port}`);
-  console.log(`   REST API:   http://localhost:${config.port}`);
-  console.log(`   Crash feed: ws://localhost:${config.port}/crash`);
-});
+  const app = createApp();
+  const httpServer = http.createServer(app);
+
+  const io = new Server(httpServer, {
+    cors: { origin: "*" },
+  });
+
+  new CrashEngine(io);
+  new CoinflipEngine(io);
+  new JackpotEngine(io);
+  new HorseRaceEngine(io);
+  attachBattleDice(io);
+  attachRPS(io);
+  attachRaffle(io);
+  attachBingo(io);
+  attachTower(io);
+  attachMultiRoulette(io);
+  attachPoker(io);
+  attachBoardGames(io);
+
+  httpServer.listen(config.port, () => {
+    console.log(`🎰 Casino Aurelius listening on :${config.port}`);
+    console.log(`   REST API:   http://localhost:${config.port}`);
+    console.log(`   Crash feed: ws://localhost:${config.port}/crash`);
+  });
+})();
