@@ -85,7 +85,12 @@ export function createApp() {
 
   app.use(express.json());
 
-  app.get("/health", (_req, res) => res.json({ ok: true, name: "casino-aurelius", time: new Date().toISOString() }));
+  app.get("/health", async (_req, res) => {
+    let dbOk = false;
+    let dbError = "";
+    try { await prisma.$queryRaw`SELECT 1`; dbOk = true; } catch (e: any) { dbError = e?.message ?? String(e); }
+    res.status(dbOk ? 200 : 503).json({ ok: dbOk, name: "casino-aurelius", time: new Date().toISOString(), db: dbOk ? "connected" : "ERROR: " + dbError });
+  });
 
   // The playable web UI — a static single-page app that talks to the API below.
   app.use(express.static(path.join(__dirname, "..", "public")));
