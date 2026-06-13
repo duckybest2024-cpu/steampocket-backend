@@ -1,5 +1,15 @@
 export interface NftPower {
-  type: "chips_bonus" | "xp_bonus" | "jackpot_entry" | "free_spin" | "multiplier_boost";
+  type:
+    | "chips_bonus"        // instant chip award
+    | "xp_bonus"          // instant XP award
+    | "jackpot_entry"     // register a jackpot entry
+    | "free_spin"         // free spin bonus chips
+    | "multiplier_boost"  // multiplier chip boost
+    | "cashback"          // refund on a loss (chips = value)
+    | "bank_bonus"        // add chips to bank balance
+    | "double_chips"      // double your current chip balance boost
+    | "lucky_draw"        // random prize between value/2 and value*2
+    | "vip_chips";        // large VIP chip reward
   label: string;
   value: number;
   description: string;
