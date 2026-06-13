@@ -766,3 +766,47 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
   .bet-panel { width: auto; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); }
   .game-canvas { padding: 14px; }
 }
+
+/* ── Engagement System ───────────────────────────────────────────────────── */
+#jackpot-ticker {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(240,194,68,0.12);
+  border: 1px solid rgba(240,194,68,0.35);
+  color: var(--gold); font-weight: 800; font-size: 0.85rem;
+  animation: ticker-pulse 2s ease-in-out infinite;
+  margin-right: 8px;
+}
+@keyframes ticker-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(240,194,68,0.4); }
+  50%      { box-shadow: 0 0 12px 4px rgba(240,194,68,0.2); }
+}
+
+.live-feed-panel {
+  position: fixed; bottom: 20px; right: 20px; z-index: 500;
+  display: flex; flex-direction: column; gap: 6px;
+  pointer-events: none; max-width: 280px;
+}
+.lf-item {
+  background: rgba(26,44,56,0.95); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+  font-size: 0.78rem; color: var(--text);
+  animation: lf-slide-in 0.3s ease; pointer-events: none;
+}
+@keyframes lf-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+.lf-item.win  { border-color: rgba(52,211,153,0.5); }
+.lf-item.loss { border-color: rgba(229,70,61,0.35); }
+
+.confetti-particle {
+  position: fixed; pointer-events: none; z-index: 9999;
+  border-radius: 2px;
+}
+
+@keyframes near-miss-flash {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 0; }
+}

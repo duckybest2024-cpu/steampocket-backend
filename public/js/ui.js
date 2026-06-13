@@ -36,7 +36,8 @@ const UI = (() => {
   }
 
   function setLevel(level, xp) {
-    document.getElementById("user-level").textContent = level;
+    const lvlEl = document.getElementById("user-level-label") || document.getElementById("user-level");
+    if (lvlEl) lvlEl.textContent = `Level ${level}`;
     // XP curve mirrors the backend: level N needs N*1000 cumulative XP.
     let remaining = xp;
     let threshold = 1000;
@@ -47,7 +48,8 @@ const UI = (() => {
       threshold = lvl * 1000;
     }
     const pct = Math.min(100, Math.round((remaining / threshold) * 100));
-    document.getElementById("xp-fill").style.width = `${pct}%`;
+    const xpFill = document.getElementById("xp-fill");
+    if (xpFill) xpFill.style.width = `${pct}%`;
   }
 
   function applyAccountUpdate(state, patch) {
@@ -57,11 +59,35 @@ const UI = (() => {
     }
     if (patch.bank !== undefined) state.bank = patch.bank;
     if (patch.level !== undefined || patch.xp !== undefined) {
+      const oldLevel = state.level;
       state.level = patch.level ?? state.level;
       state.xp = patch.xp ?? state.xp;
       setLevel(state.level, state.xp);
+      if (patch.level && patch.level > oldLevel && typeof Engagement !== "undefined") {
+        Engagement.levelUp(state.level, state.rank);
+      }
     }
     if (patch.leveledUp) toast(`🎉 Level up! You're now level ${state.level} (+${money(state.level * 500)} bonus)`, "win");
+
+    // Engagement system hooks
+    if (typeof Engagement !== "undefined" && patch.result) {
+      const r = patch.result;
+      const isWin = r.result === "win";
+      const payout = r.payout || 0;
+      const amount = r.amount || 0;
+      if (isWin) {
+        if (payout > amount * 3) {
+          Engagement.confetti(payout > 100000 ? "jackpot" : "big");
+          Engagement.sound("bigwin");
+        } else {
+          Engagement.sound("win");
+        }
+      } else {
+        Engagement.sound("loss");
+      }
+      Engagement.streak.record(isWin);
+      Engagement.feed.push({ username: "You", game: "Casino", amount: payout || amount, isWin });
+    }
   }
 
   function cardLabel(card) {

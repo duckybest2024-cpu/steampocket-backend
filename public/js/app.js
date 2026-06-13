@@ -352,6 +352,12 @@ const App = (() => {
     } else {
       mount("lobby");
     }
+
+    // Engagement system
+    if (typeof Engagement !== "undefined") {
+      setTimeout(() => Engagement.checkDailyBonus(state), 1500);
+      Engagement.jackpotTicker.start(50000);
+    }
   }
 
   function wireTopbar() {

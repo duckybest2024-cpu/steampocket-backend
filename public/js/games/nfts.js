@@ -45,6 +45,8 @@ const NFTsGame = (() => {
                     <span id="draw-size-label" style="font-size:0.75rem;color:var(--text-dim);min-width:24px">8px</span>
                   </div>
                   <div style="width:1px;height:24px;background:var(--border)"></div>
+                  <button id="draw-import-btn" class="secondary-btn" style="padding:4px 10px;font-size:0.8rem" title="Import a photo from your device">📷 Import Photo</button>
+                  <input id="draw-import-input" type="file" accept="image/*" style="display:none" />
                   <button id="draw-undo" class="secondary-btn" style="padding:4px 10px;font-size:0.8rem">↩ Undo</button>
                   <button id="draw-clear" class="secondary-btn" style="padding:4px 10px;font-size:0.8rem">🗑 Clear</button>
                 </div>
@@ -292,6 +294,46 @@ const NFTsGame = (() => {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         syncPreview();
       });
+
+      // Photo import — opens file picker and draws selected image onto canvas
+      const importBtn = document.getElementById("draw-import-btn");
+      const importInput = document.getElementById("draw-import-input");
+      if (importBtn && importInput) {
+        importBtn.addEventListener("click", () => importInput.click());
+        importInput.addEventListener("change", () => {
+          const file = importInput.files[0];
+          if (!file) return;
+          if (!file.type.startsWith("image/")) {
+            UI.toast("Please select an image file (PNG, JPG, WEBP, etc.)", "loss");
+            return;
+          }
+          if (file.size > 5 * 1024 * 1024) {
+            UI.toast("Image too large — max 5 MB", "loss");
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+              saveUndo();
+              // Fill background then draw image centered and scaled to fit 400×400
+              ctx.fillStyle = "#1a1a2e";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+              const drawW = img.width * scale;
+              const drawH = img.height * scale;
+              const drawX = (canvas.width - drawW) / 2;
+              const drawY = (canvas.height - drawH) / 2;
+              ctx.drawImage(img, drawX, drawY, drawW, drawH);
+              syncPreview();
+              UI.toast("Photo imported — draw on top or mint directly!", "win");
+            };
+            img.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+          importInput.value = ""; // allow re-selecting same file
+        });
+      }
 
       // Draw helpers
       function getPos(e) {
