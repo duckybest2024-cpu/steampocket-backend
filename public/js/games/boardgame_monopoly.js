@@ -289,7 +289,7 @@ const MonopolyGame = (() => {
       document.head.appendChild(style);
     }
 
-    const state = room.state || {};
+    const state = room.gameState || room.state || {};
 
     // ── HTML skeleton ─────────────────────────────────────────────
     container.innerHTML = `
@@ -431,7 +431,7 @@ const MonopolyGame = (() => {
       let ownerBand = "";
       if (sq.owner !== undefined && sq.owner !== null && boardSquares) {
         // Show a colored owner indicator
-        const ownerPlayer = (room.state?.players || []).find(p => p.userId === sq.owner);
+        const ownerPlayer = ((room.gameState || room.state)?.players || []).find(p => p.userId === sq.owner);
         if (ownerPlayer) {
           const col = ownerPlayer.color || PLAYER_COLORS[0];
           ownerBand = `<div style="position:absolute;bottom:14px;left:0;right:0;height:3px;background:${col};opacity:0.85"></div>`;
@@ -517,7 +517,7 @@ const MonopolyGame = (() => {
         return;
       }
 
-      const board = room.state?.board || SQUARE_DEFS;
+      const board = (room.gameState || room.state)?.board || SQUARE_DEFS;
       const myProps = me.properties.map(i => board[i] || SQUARE_DEFS[i]);
 
       // Show only properties, not railroads/utilities for build

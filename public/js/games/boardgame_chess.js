@@ -28,6 +28,24 @@ const ChessGame = (() => {
 
   function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
 
+  // Convert backend gameState format to frontend format.
+  // Backend: board cells are "wR","bK","" — turn is "w"|"b"
+  // Frontend: board cells are "R","k",null — turn is "white"|"black"
+  function normalizeChessState(gs) {
+    if (!gs || !gs.board) return {};
+    const board = gs.board.map(row =>
+      row.map(cell => {
+        if (!cell) return null;
+        if (cell.length === 2) return cell[0] === 'w' ? cell[1].toUpperCase() : cell[1].toLowerCase();
+        return cell || null;
+      })
+    );
+    let turn = gs.turn || 'white';
+    if (turn === 'w') turn = 'white';
+    else if (turn === 'b') turn = 'black';
+    return { ...gs, board, turn };
+  }
+
   function getLegalMoves(board, r, c) {
     const piece = board[r][c];
     if (!piece) return [];
@@ -386,7 +404,7 @@ const ChessGame = (() => {
 
     // Determine my color
     const myColor = room.players[0] && room.players[0].userId === myUserId ? 'white' : 'black';
-    let state = room.state || {};
+    let state = normalizeChessState(room.gameState || room.state);
     let board = state.board ? state.board.map(r => r.slice()) : INITIAL_BOARD.map(r => r.slice());
     let turn = state.turn || 'white';
     let gameStatus = state.status || 'playing';
@@ -668,7 +686,7 @@ const ChessGame = (() => {
     // Socket events
     socket.on('bg:room-update', (updatedRoom) => {
       if (updatedRoom.id !== room.id) return;
-      const s = updatedRoom.state || {};
+      const s = normalizeChessState(updatedRoom.gameState || updatedRoom.state);
       if (s.board) board = s.board.map(r => r.slice());
       if (s.turn) turn = s.turn;
       if (s.status) gameStatus = s.status;

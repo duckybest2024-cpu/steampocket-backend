@@ -85,7 +85,10 @@ const CasesGame = (() => {
 
   async function openCase(caseId, container, cases) {
     const caseData = cases.find(c => c.id === caseId);
-    if (!caseData) return;
+    if (!caseData) {
+      UI.toast("Case not found — please refresh the page", "loss");
+      return;
+    }
 
     const overlay = showOpeningOverlay(container);
 

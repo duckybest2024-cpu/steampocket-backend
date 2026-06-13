@@ -16,6 +16,17 @@ const CheckersGame = (() => {
 
   function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
 
+  // Convert backend gameState to frontend format.
+  // Backend turn: 0 (player 0 = red) | 1 (player 1 = black)
+  // Frontend turn: 'red' | 'black'
+  function normalizeCheckersState(gs) {
+    if (!gs) return {};
+    let turn = gs.turn;
+    if (turn === 0) turn = 'red';
+    else if (turn === 1) turn = 'black';
+    return { ...gs, turn };
+  }
+
   // Returns { moves: [[r,c]], jumps: [[r,c]] }  for a single piece
   function getPieceMoves(board, r, c) {
     const piece = board[r][c];
@@ -347,7 +358,7 @@ const CheckersGame = (() => {
 
     // Determine my color: room creator plays red (index 0)
     const myColor = room.players[0] && room.players[0].userId === myUserId ? 'red' : 'black';
-    let state = room.state || {};
+    let state = normalizeCheckersState(room.gameState || room.state);
     let board = state.board ? state.board.map(r => r.slice()) : buildInitialBoard();
     let turn  = state.turn || 'red';
     let gameStatus = state.status || 'playing';
@@ -697,7 +708,7 @@ const CheckersGame = (() => {
     // Socket events
     socket.on('bg:room-update', (updatedRoom) => {
       if (updatedRoom.id !== room.id) return;
-      const s = updatedRoom.state || {};
+      const s = normalizeCheckersState(updatedRoom.gameState || updatedRoom.state);
       if (s.board) board = s.board.map(r => r.slice());
       if (s.turn !== undefined) turn = s.turn;
       if (s.status) gameStatus = s.status;

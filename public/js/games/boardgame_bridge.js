@@ -202,7 +202,7 @@ const BridgeGame = (() => {
     }
 
     // State refs
-    const state = room.state || {};
+    const state = room.gameState || room.state || {};
     const mySeat = state.mySeat || "";
     const phase  = state.phase  || "bidding";
 
