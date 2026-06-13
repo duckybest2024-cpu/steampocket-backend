@@ -601,3 +601,168 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
 @media (max-width: 700px) {
   .arcade-lobby-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); padding: 10px 14px 20px; }
 }
+
+/* When .game-panel wraps the new two-col layout, strip its own decoration */
+.game-panel:has(.game-layout) { padding: 0; background: transparent; border: none; }
+
+/* ── Two-column game layout ──────────────────────────────────── */
+.game-layout {
+  display: flex;
+  min-height: 540px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.bet-panel {
+  width: 245px;
+  min-width: 245px;
+  background: var(--bg-elev);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bp-tabs {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+.bp-tab {
+  flex: 1;
+  padding: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.bp-tab.active { background: var(--bg-card); color: var(--text); }
+
+.bp-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+.bp-input-row {
+  display: flex;
+  gap: 5px;
+  align-items: stretch;
+}
+.bp-input-row input { flex: 1; min-width: 0; }
+
+.quick-btn {
+  padding: 7px 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.quick-btn:hover { color: var(--text); border-color: var(--accent); }
+
+.bp-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+.play-btn {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #071a10;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: auto;
+  transition: filter 0.15s;
+}
+.play-btn:hover { filter: brightness(1.1); }
+.play-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+.play-btn.danger { background: linear-gradient(135deg, #f87171, #ef4444); color: #1a0707; }
+
+.game-canvas {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.stat-boxes { display: flex; gap: 8px; }
+.stat-box {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stat-box .sb-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
+.stat-box .sb-value { font-size: 1rem; font-weight: 700; color: var(--text); }
+
+.history-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.history-chip {
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.history-chip.hc-low  { color: var(--loss); border-color: var(--loss); }
+.history-chip.hc-mid  { color: var(--gold); border-color: var(--gold); }
+.history-chip.hc-high { color: var(--win);  border-color: var(--win); }
+
+.mine-opts { display: flex; gap: 5px; flex-wrap: wrap; }
+.mine-opt {
+  flex: 1;
+  min-width: 36px;
+  padding: 7px 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: center;
+}
+.mine-opt.active, .mine-opt:hover { border-color: var(--accent); color: var(--text); }
+
+.range-track { height: 40px; border-radius: 20px; }
+.range-track-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+@media (max-width: 700px) {
+  .game-layout { flex-direction: column; min-height: unset; }
+  .bet-panel { width: auto; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); }
+  .game-canvas { padding: 14px; }
+}
