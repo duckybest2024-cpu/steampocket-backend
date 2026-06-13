@@ -30,5 +30,5 @@ COPY public ./public/
 
 EXPOSE 3000
 
-# Push schema then start server
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]
+# Use built-in SQLite (no external database needed), create tables, start server
+CMD ["sh", "-c", "export DATABASE_URL=${DATABASE_URL:-file:/data/casino.db} && mkdir -p /data && npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]
