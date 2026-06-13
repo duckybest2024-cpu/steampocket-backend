@@ -34,44 +34,65 @@ const BoardGamesGame = (() => {
   let myUserId       = null;
   let modalOpen      = false;
 
+  // ─── Normalize room data from backend ────────────────────────────────────
+  // Backend uses `game` and `betChips`; frontend uses `gameId` and `bet`.
+  function normalizeRoom(r) {
+    if (!r) return r;
+    r.gameId    = r.gameId    ?? r.game;
+    r.bet       = r.bet       ?? r.betChips;
+    r.players   = r.players   ?? Array.from({ length: r.playerCount || 0 }, () => ({}));
+    return r;
+  }
+
   // ─── Socket bootstrap ─────────────────────────────────────────────────────
-  function initSocket() {
+  function initSocket(accountState) {
     if (socket) return;
     socket = io("/boardgames", { auth: { token: Api.getToken() } });
+
+    // Get userId from accountState (backend doesn't emit bg:me)
+    if (accountState && accountState.id) myUserId = accountState.id;
 
     socket.on("connect_error", (err) => {
       UI.toast("Board games connection failed: " + err.message, "loss");
     });
 
-    socket.on("bg:me", (data) => {
-      myUserId = data.userId;
-    });
-
-    socket.on("bg:rooms", (rooms) => {
-      openRooms = rooms || [];
+    // bg:rooms — backend sends { rooms: [...] }
+    socket.on("bg:rooms", (payload) => {
+      const list = (payload && payload.rooms) ? payload.rooms : (Array.isArray(payload) ? payload : []);
+      openRooms = list.map(normalizeRoom);
       if (!currentRoom) renderLobby();
     });
 
+    // bg:room-update — sent to every player after any room change
     socket.on("bg:room-update", (roomState) => {
-      currentRoom = roomState;
-      if (roomState.status === "playing") {
-        launchGameRenderer(roomState);
+      currentRoom = normalizeRoom(roomState);
+      if (currentRoom.status === "playing") {
+        launchGameRenderer(currentRoom);
       } else {
-        renderWaitingRoom(roomState);
+        renderWaitingRoom(currentRoom);
       }
     });
 
+    // bg:create — sent only to the creator; treat as "you joined"
+    socket.on("bg:create", (data) => {
+      const roomState = normalizeRoom(data && data.room ? data.room : data);
+      currentRoom = roomState;
+      renderWaitingRoom(roomState);
+    });
+
+    // bg:game-over — backend sends { winner (username string), prize (cents) }
     socket.on("bg:game-over", (data) => {
-      showGameOver(data);
+      const normalized = {
+        winnerId:   null,
+        winnerIds:  null,
+        message:    data.winner ? `${data.winner} wins!` : "It's a draw!",
+        payout:     data.prize ? Math.floor(data.prize / 100) : 0,
+      };
+      showGameOver(normalized);
     });
 
     socket.on("bg:error", (msg) => {
       UI.toast(typeof msg === "string" ? msg : (msg.message || "Board game error"), "loss");
-    });
-
-    socket.on("bg:joined", (roomState) => {
-      currentRoom = roomState;
-      renderWaitingRoom(roomState);
     });
 
     socket.on("bg:chips-update", (chips) => {
@@ -80,14 +101,13 @@ const BoardGamesGame = (() => {
   }
 
   // ─── Main render entry ────────────────────────────────────────────────────
-  function render(container) {
+  function render(container, accountState) {
     _container = container;
     injectStyles();
-    initSocket();
+    initSocket(accountState);
 
-    // Request current user identity and room list
-    socket.emit("bg:get-me");
-    socket.emit("bg:get-rooms");
+    // Request room list from backend
+    socket.emit("bg:rooms");
 
     renderLobby();
   }
@@ -241,23 +261,26 @@ const BoardGamesGame = (() => {
 
   // ─── Socket actions ────────────────────────────────────────────────────────
   function createRoom(gameId, bet, maxPlayers) {
-    socket.emit("bg:create-room", { gameId, bet, maxPlayers });
+    // Backend expects: { game, betChips, maxPlayers }
+    socket.emit("bg:create", { game: gameId, betChips: bet, maxPlayers });
   }
 
   function joinRoom(roomId) {
-    socket.emit("bg:join-room", { roomId });
+    socket.emit("bg:join", { roomId });
   }
 
   function setReady() {
-    if (currentRoom) socket.emit("bg:ready", { roomId: currentRoom.id });
+    // Backend reads currentRoomId from socket state — no params needed
+    socket.emit("bg:ready");
   }
 
   function leaveRoom() {
     if (currentRoom) {
-      socket.emit("bg:leave-room", { roomId: currentRoom.id });
+      // Backend reads currentRoomId from socket state — no params needed
+      socket.emit("bg:leave");
       currentRoom = null;
     }
-    socket.emit("bg:get-rooms");
+    socket.emit("bg:rooms");
     renderLobby();
     attachLobbyListeners();
   }
@@ -359,7 +382,7 @@ const BoardGamesGame = (() => {
     banner.querySelector(".bg-gameover__lobby-btn").addEventListener("click", () => {
       banner.remove();
       currentRoom = null;
-      socket.emit("bg:get-rooms");
+      socket.emit("bg:rooms");
       renderLobby();
       attachLobbyListeners();
     });
