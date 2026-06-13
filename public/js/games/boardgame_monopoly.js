@@ -629,45 +629,89 @@ const MonopolyGame = (() => {
     }
 
     // ── Socket listeners ──────────────────────────────────────────
-    socket.on("bg:state", (newState) => {
-      Object.assign(room.state, newState);
-      fullRender(room.state);
+    socket.on("bg:room-update", (updatedRoom) => {
+      const newState = updatedRoom.gameState;
+      if (!newState) return;
+      refreshMonopolyUI(newState, updatedRoom.players);
     });
 
-    socket.on("bg:move", ({ move, userId, username }) => {
-      const centerMsg = document.getElementById("mono-center-msg");
-      const name = username || "A player";
-      if (move.type === "roll") {
-        if (centerMsg) centerMsg.textContent = `${name} is rolling…`;
-      } else if (move.type === "buy") {
-        showNotif(`${name} bought a property!`, "info");
-      } else if (move.type === "endTurn") {
-        if (centerMsg) centerMsg.textContent = `${name} ended their turn`;
+    socket.on("bg:error", ({ message }) => {
+      UI.toast(message || "An error occurred", "loss");
+    });
+
+    // ── Adapt backend state to UI state and re-render ────────────
+    // Backend state shape:
+    //   players: { [userId]: { money, position, inJail, jailTurns, properties: number[], bankrupt } }
+    //   playerOrder: string[]   (userId array)
+    //   currentTurn: string     (userId)
+    //   phase: "roll" | "buy" | "end"
+    //   dice: [number, number] | null
+    //   properties: { [squareIdx]: { owner: string|null, houses: number } }
+    //   round: number
+    //   status: "playing" | "finished"
+    //   winner: string | null
+    function refreshMonopolyUI(backendState, roomPlayers) {
+      // Build a lookup from userId → username/color using roomPlayers array
+      const playerInfoMap = {};
+      if (Array.isArray(roomPlayers)) {
+        roomPlayers.forEach((rp, i) => {
+          playerInfoMap[rp.id || rp.userId] = {
+            username: rp.username || rp.name || `Player ${i+1}`,
+            color:    PLAYER_COLORS[i % PLAYER_COLORS.length],
+          };
+        });
       }
-    });
 
-    socket.on("bg:error", (msg) => {
-      UI.toast(msg, "loss");
-    });
+      // Convert backend players object → array sorted by playerOrder
+      const backPlayers = backendState.players || {};
+      const playerOrder = backendState.playerOrder || Object.keys(backPlayers);
+      const uiPlayers = playerOrder.map((uid, i) => {
+        const bp = backPlayers[uid] || {};
+        const info = playerInfoMap[uid] || {};
+        return {
+          userId:     uid,
+          username:   info.username || `Player ${i+1}`,
+          color:      info.color || PLAYER_COLORS[i % PLAYER_COLORS.length],
+          money:      bp.money ?? 1500,
+          position:   bp.position ?? 0,
+          inJail:     bp.inJail || false,
+          jailTurns:  bp.jailTurns || 0,
+          properties: bp.properties || [],
+          bankrupt:   bp.bankrupt || false,
+        };
+      });
 
-    socket.on("bg:gameOver", ({ winner, winnerName }) => {
-      const won = winner === myUserId;
-      const name = winnerName || "Someone";
-      UI.toast(
-        won ? "You won the game!" : `${name} won the game!`,
-        won ? "win" : "loss"
-      );
-      const centerMsg = document.getElementById("mono-center-msg");
-      if (centerMsg) {
-        centerMsg.innerHTML = `<strong style="color:${won ? "var(--win)" : "var(--gold)"};font-size:0.85rem">
-          ${won ? "🏆 You Win!" : `${name} wins!`}
-        </strong>`;
-      }
-      rollBtn.disabled = true;
-      buyBtn.style.display = "none";
-      endBtn.style.display = "none";
-      if (won && typeof updateBalance === "function") updateBalance(null);
-    });
+      // Build a board array: enrich SQUARE_DEFS with ownership/house data
+      const backProps = backendState.properties || {};
+      const uiBoard = SQUARE_DEFS.map((sq, idx) => {
+        const propData = backProps[idx] || backProps[String(idx)];
+        if (!propData) return { ...sq };
+        return {
+          ...sq,
+          owner:     propData.owner || null,
+          houses:    propData.houses || 0,
+          mortgaged: propData.mortgaged || false,
+        };
+      });
+
+      // Map backend phase: "roll"→"waiting", "buy"→"buying", "end"→"rolled"
+      const phaseMap = { roll: "waiting", buy: "buying", end: "rolled" };
+      const uiPhase = phaseMap[backendState.phase] || backendState.phase || "waiting";
+
+      const uiState = {
+        players:       uiPlayers,
+        board:         uiBoard,
+        turn:          backendState.currentTurn || "",
+        currentPlayer: backendState.currentTurn || "",
+        phase:         uiPhase,
+        diceResult:    backendState.dice || null,
+        round:         backendState.round || 1,
+        status:        backendState.status,
+        winner:        backendState.winner,
+      };
+
+      fullRender(uiState);
+    }
 
     // ── Button wiring ─────────────────────────────────────────────
     rollBtn.addEventListener("click", () => {
@@ -682,11 +726,15 @@ const MonopolyGame = (() => {
 
     endBtn.addEventListener("click", () => {
       endBtn.style.display = "none";
-      socket.emit("bg:move", { roomId: room.id, move: { type: "endTurn" } });
+      socket.emit("bg:move", { roomId: room.id, move: { type: "end_turn" } });
     });
 
     // ── Initial render ────────────────────────────────────────────
-    fullRender(state);
+    if (room.gameState) {
+      refreshMonopolyUI(room.gameState, room.players);
+    } else {
+      fullRender(state);
+    }
   }
 
   return { renderBoard };
