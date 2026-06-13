@@ -135,6 +135,12 @@ const NFTsGame = (() => {
     });
 
     // ── Collection ─────────────────────────────────────────────────
+    const POWER_ICONS = {
+      chips_bonus: "💰", xp_bonus: "⭐", jackpot_entry: "🎰", free_spin: "🎡",
+      multiplier_boost: "✖️", cashback: "🔄", bank_bonus: "🏦",
+      double_chips: "2️⃣", lucky_draw: "🎲", vip_chips: "👑",
+    };
+
     async function loadCollection() {
       const gridEl = document.getElementById("nft-grid");
       const emptyEl = document.getElementById("nft-empty");
@@ -144,17 +150,47 @@ const NFTsGame = (() => {
         emptyEl.style.display = "none";
         gridEl.innerHTML = nfts.map((nft) => {
           const color = RARITY_COLOR[nft.rarity] || "#9ca3af";
+          let parsedDesc = null;
+          let power = null;
+          let isUsed = nft.category && nft.category.endsWith("_used");
+          try { parsedDesc = JSON.parse(nft.description); power = parsedDesc?.power; } catch {}
           const visual = nft.customImage
             ? `<img src="${nft.customImage}" alt="${nft.name}" style="width:80px;height:80px;object-fit:contain;border-radius:6px;margin-bottom:6px" />`
             : `<div style="font-size:2.5rem;margin-bottom:6px">${nft.emoji}</div>`;
+          const powerBadge = power && !isUsed
+            ? `<div style="margin:4px 0;padding:3px 8px;border-radius:8px;font-size:0.68rem;font-weight:700;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);color:#c4b5fd;display:inline-block">${POWER_ICONS[power.type] || "⚡"} ${power.label}</div>`
+            : isUsed ? `<div style="font-size:0.68rem;color:#6b7280;margin:2px 0">✓ Power used</div>` : "";
+          const useBtn = power && !isUsed
+            ? `<button class="nft-coll-use-btn" data-id="${nft.id}" style="width:100%;margin-top:6px;padding:7px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;border-radius:8px;color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer;">⚡ Use Power</button>`
+            : "";
           return `<div style="background:var(--bg-elev);border:2px solid ${color};border-radius:12px;padding:12px;text-align:center;transition:transform 0.15s" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''">
             ${visual}
             <div style="font-weight:700;font-size:0.88rem;margin-bottom:2px">${nft.name}</div>
             <div style="font-size:0.72rem;color:${color};font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${RARITY_LABEL[nft.rarity] || nft.rarity}</div>
-            <div style="font-size:0.72rem;color:var(--text-dim)">${nft.description}</div>
-            <div style="font-size:0.65rem;color:var(--text-dim);margin-top:4px">${new Date(nft.mintedAt).toLocaleDateString()}</div>
+            ${powerBadge}
+            <div style="font-size:0.72rem;color:var(--text-dim)">${parsedDesc?.desc || nft.description}</div>
+            ${useBtn}
           </div>`;
         }).join("");
+
+        // Wire use-power buttons
+        gridEl.querySelectorAll(".nft-coll-use-btn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const nftId = btn.dataset.id;
+            btn.disabled = true;
+            btn.textContent = "Activating…";
+            try {
+              const r = await Api.post(`/nftmarket/use/${nftId}`);
+              if (r.balance !== undefined) UI.setBalance(r.balance * 100);
+              UI.toast(`⚡ ${r.effect}`, "win");
+              loadCollection();
+            } catch (e) {
+              btn.disabled = false;
+              btn.textContent = "⚡ Use Power";
+              UI.toast(e.message || "Failed to use power", "loss");
+            }
+          });
+        });
       } catch (e) {
         gridEl.innerHTML = `<div style="color:var(--text-dim)">Failed to load collection</div>`;
       }
