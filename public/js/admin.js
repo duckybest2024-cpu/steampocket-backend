@@ -62,7 +62,7 @@ const AdminGame = (() => {
     badge: `display:inline-block;border-radius:6px;padding:2px 8px;font-size:0.72rem;font-weight:700;`,
   };
 
-  const TABS = ["stats","users","adjust","bets","players","broadcasts","promos","controls","nfts","bank","danger"];
+  const TABS = ["stats","users","adjust","bets","players","broadcasts","promos","controls","nfts","bank","danger","maintenance","config","ipblocks","reports","analytics","referrals","leaderboard","chatmod","scratch","prizes"];
 
   function money(cents) { return UI.money(cents); }
   function chips(cents) { return Math.floor(cents / 100).toLocaleString() + " 🪙"; }
@@ -234,7 +234,17 @@ const AdminGame = (() => {
             <button id="adm-tab-controls"   style="${tabStyle("controls")}">🔧 Controls</button>
             <button id="adm-tab-nfts"       style="${tabStyle("nfts")}">🖼️ NFTs</button>
             <button id="adm-tab-bank"       style="${tabStyle("bank")}">🏦 Bank</button>
-            <button id="adm-tab-danger"     style="${tabStyle("danger")}">⚠️ Danger</button>
+            <button id="adm-tab-danger"       style="${tabStyle("danger")}">⚠️ Danger</button>
+            <button id="adm-tab-maintenance"  style="${tabStyle("maintenance")}">🔒 Maintenance</button>
+            <button id="adm-tab-config"       style="${tabStyle("config")}">⚙️ Config</button>
+            <button id="adm-tab-ipblocks"     style="${tabStyle("ipblocks")}">🚫 IP Blocks</button>
+            <button id="adm-tab-reports"      style="${tabStyle("reports")}">🔍 Reports</button>
+            <button id="adm-tab-analytics"    style="${tabStyle("analytics")}">📈 Analytics</button>
+            <button id="adm-tab-referrals"    style="${tabStyle("referrals")}">🔗 Referrals</button>
+            <button id="adm-tab-leaderboard"  style="${tabStyle("leaderboard")}">🏆 Leaderboard</button>
+            <button id="adm-tab-chatmod"      style="${tabStyle("chatmod")}">💬 Chat Mod</button>
+            <button id="adm-tab-scratch"      style="${tabStyle("scratch")}">🎟️ Scratch</button>
+            <button id="adm-tab-prizes"       style="${tabStyle("prizes")}">🎁 Prizes</button>
           </div>
           ${TABS.map(t => `<div id="adm-pane-${t}" style="${t === "stats" ? "" : "display:none;"}"></div>`).join("")}
         </div>
@@ -247,6 +257,7 @@ const AdminGame = (() => {
 
       buildAdjustPane();
       buildDangerPane();
+      buildConfigPane();
       switchTab("stats", true);
     }
 
@@ -273,6 +284,16 @@ const AdminGame = (() => {
       if (key === "controls") loadControls();
       if (key === "nfts") loadNfts();
       if (key === "bank") loadBank();
+      if (key === "maintenance") loadMaintenance();
+      if (key === "config") loadConfig();
+      if (key === "ipblocks") loadIpBlocks();
+      if (key === "reports") loadReports();
+      if (key === "analytics") loadAnalytics();
+      if (key === "referrals") loadReferrals();
+      if (key === "leaderboard") loadLeaderboard();
+      if (key === "chatmod") loadChatMod();
+      if (key === "scratch") loadScratch();
+      if (key === "prizes") loadPrizes();
     }
 
     // ── Stats ──────────────────────────────────────────────────────────────────

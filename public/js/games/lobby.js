@@ -188,7 +188,21 @@ const LobbyGame = (() => {
             <div class="lpc-icon">🏦</div>
             <div>
               <div class="lpc-title">Buy Chips</div>
-              <div class="lpc-desc">Purchase chips to start playing. Instant credit via Stripe & LiqPay.</div>
+              <div class="lpc-desc">$1 = 10 chips. Instant credit via Stripe & LiqPay.</div>
+            </div>
+          </div>
+          <div class="lobby-promo-card" data-nav="download">
+            <div class="lpc-icon">🖥️</div>
+            <div>
+              <div class="lpc-title">Play on PC</div>
+              <div class="lpc-desc">Download the Windows desktop app — play offline with no browser needed.</div>
+            </div>
+          </div>
+          <div class="lobby-promo-card" data-nav="scratch">
+            <div class="lpc-icon">🎟️</div>
+            <div>
+              <div class="lpc-title">Scratch Cards</div>
+              <div class="lpc-desc">50 different ticket types. Instant wins from 5 🪙.</div>
             </div>
           </div>
         </div>
