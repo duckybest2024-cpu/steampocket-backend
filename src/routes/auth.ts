@@ -14,13 +14,14 @@ const credentialsSchema = z.object({
   username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/, "letters, numbers, underscore only"),
   email: z.string().email(),
   password: z.string().min(8).max(72),
+  patreonUsername: z.string().min(2).max(50).optional(),
 });
 
 authRouter.post("/register", async (req, res) => {
   const parsed = credentialsSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
-  const { username, email, password } = parsed.data;
+  const { username, email, password, patreonUsername } = parsed.data;
 
   try {
     const existing = await prisma.user.findFirst({ where: { OR: [{ username }, { email }] } });
@@ -39,13 +40,15 @@ authRouter.post("/register", async (req, res) => {
         serverSeedHash: seedPair.serverSeedHash,
         clientSeed: seedPair.clientSeed,
         emailVerified: true,
+        patreonUsername: patreonUsername ?? null,
+        isApproved: false,
       },
     });
 
     res.status(201).json({
       token: signToken(user.id),
-      user: publicUser({ ...user, emailVerified: true }),
-      message: "Account created! Purchase chips to start playing.",
+      user: publicUser(user),
+      message: "Account created! Your request is pending admin approval. You must have an active Patreon subscription to play.",
     });
   } catch (err: any) {
     if (err?.code === "P2002") {
@@ -138,8 +141,23 @@ authRouter.post("/login", async (req, res) => {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
+    if (user.isBanned) return res.status(403).json({ error: "Account banned. Contact support." });
+
     const token = signToken(user.id);
-    res.json({ token, user: publicUser(user) });
+    const pub = publicUser(user);
+
+    // If account is pending approval, return token but flag it
+    if (!user.isApproved) {
+      return res.json({ token, user: pub, pendingApproval: true });
+    }
+
+    // Check subscription expiry
+    if (user.approvedUntil && user.approvedUntil < new Date()) {
+      await prisma.user.update({ where: { id: user.id }, data: { isApproved: false } });
+      return res.json({ token, user: { ...pub, isApproved: false }, pendingApproval: true });
+    }
+
+    res.json({ token, user: pub });
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Login failed — please try again" });
@@ -172,6 +190,11 @@ export function publicUser(user: {
   clientSeed: string;
   nonce: number;
   emailVerified: boolean;
+  isAdmin?: boolean;
+  isApproved?: boolean;
+  approvedUntil?: Date | null;
+  patreonUsername?: string | null;
+  patreonTier?: string | null;
 }) {
   return {
     id: user.id,
@@ -185,6 +208,11 @@ export function publicUser(user: {
     xp: user.xp,
     createdAt: user.createdAt,
     emailVerified: user.emailVerified,
+    isAdmin: user.isAdmin ?? false,
+    isApproved: user.isApproved ?? true,
+    approvedUntil: user.approvedUntil ?? null,
+    patreonUsername: user.patreonUsername ?? null,
+    patreonTier: user.patreonTier ?? null,
     fairness: {
       activeServerSeedHash: user.serverSeedHash,
       clientSeed: user.clientSeed,

@@ -1,14 +1,36 @@
 const AdminGame = (() => {
   const RANK_INFO = {
-    bronze:   { label: "Bronze",   c: "#cd7f32" },
-    silver:   { label: "Silver",   c: "#c0c0c0" },
-    gold:     { label: "Gold",     c: "#ffd700" },
-    platinum: { label: "Platinum", c: "#b9f2ff" },
-    diamond:  { label: "Diamond",  c: "#00e5ff" },
-    owner:    { label: "👑 Owner", c: "#a855f7" },
+    newcomer:    { label: "Newcomer",     c: "#9ca3af" },
+    beginner:    { label: "Beginner",     c: "#6b7280" },
+    amateur:     { label: "Amateur",      c: "#78716c" },
+    apprentice:  { label: "Apprentice",   c: "#92400e" },
+    bronze:      { label: "Bronze",       c: "#cd7f32" },
+    silver:      { label: "Silver",       c: "#c0c0c0" },
+    gold:        { label: "Gold",         c: "#ffd700" },
+    platinum:    { label: "Platinum",     c: "#b9f2ff" },
+    diamond:     { label: "Diamond",      c: "#00e5ff" },
+    emerald:     { label: "Emerald",      c: "#10b981" },
+    sapphire:    { label: "Sapphire",     c: "#3b82f6" },
+    ruby:        { label: "Ruby",         c: "#ef4444" },
+    jade:        { label: "Jade",         c: "#06b6d4" },
+    crystal:     { label: "Crystal",      c: "#8b5cf6" },
+    elite:       { label: "Elite",        c: "#6366f1" },
+    master:      { label: "Master",       c: "#f59e0b" },
+    grandmaster: { label: "Grandmaster",  c: "#f97316" },
+    legend:      { label: "Legend",       c: "#ec4899" },
+    titan:       { label: "Titan",        c: "#a855f7" },
+    owner:       { label: "👑 Owner",     c: "#a855f7" },
   };
 
-  const RANK_OPTS = ["bronze","silver","gold","platinum","diamond"];
+  const PATREON_TIER_INFO = {
+    bronze_patron:   { label: "🥉 Bronze Patron",   c: "#cd7f32", price: "$1/mo" },
+    silver_patron:   { label: "🥈 Silver Patron",   c: "#c0c0c0", price: "$5/mo" },
+    gold_patron:     { label: "🥇 Gold Patron",     c: "#ffd700", price: "$10/mo" },
+    platinum_patron: { label: "💠 Platinum Patron", c: "#b9f2ff", price: "$25/mo" },
+    diamond_patron:  { label: "💎 Diamond Patron",  c: "#00e5ff", price: "$50/mo" },
+  };
+
+  const RANK_OPTS = ["newcomer","beginner","amateur","apprentice","bronze","silver","gold","platinum","diamond","emerald","sapphire","ruby","jade","crystal","elite","master","grandmaster","legend","titan"];
 
   const GAMES = ["dice","limbo","mines","plinko","crash","keno","hilo","blackjack","roulette","slots","baccarat","videopoker","wheel","coinflip"];
 
@@ -62,7 +84,7 @@ const AdminGame = (() => {
     badge: `display:inline-block;border-radius:6px;padding:2px 8px;font-size:0.72rem;font-weight:700;`,
   };
 
-  const TABS = ["stats","users","adjust","bets","players","broadcasts","promos","controls","nfts","bank","danger","maintenance","config","ipblocks","reports","analytics","referrals","leaderboard","chatmod","scratch","prizes"];
+  const TABS = ["stats","users","adjust","bets","players","broadcasts","promos","controls","nfts","bank","danger","maintenance","config","ipblocks","reports","analytics","referrals","leaderboard","chatmod","scratch","prizes","subscriptions"];
 
   function money(cents) { return UI.money(cents); }
   function chips(cents) { return Math.floor(cents / 100).toLocaleString() + " 🪙"; }
@@ -243,8 +265,9 @@ const AdminGame = (() => {
             <button id="adm-tab-referrals"    style="${tabStyle("referrals")}">🔗 Referrals</button>
             <button id="adm-tab-leaderboard"  style="${tabStyle("leaderboard")}">🏆 Leaderboard</button>
             <button id="adm-tab-chatmod"      style="${tabStyle("chatmod")}">💬 Chat Mod</button>
-            <button id="adm-tab-scratch"      style="${tabStyle("scratch")}">🎟️ Scratch</button>
-            <button id="adm-tab-prizes"       style="${tabStyle("prizes")}">🎁 Prizes</button>
+            <button id="adm-tab-scratch"        style="${tabStyle("scratch")}">🎟️ Scratch</button>
+            <button id="adm-tab-prizes"         style="${tabStyle("prizes")}">🎁 Prizes</button>
+            <button id="adm-tab-subscriptions"  style="${tabStyle("subscriptions")}">🔑 Subscriptions</button>
           </div>
           ${TABS.map(t => `<div id="adm-pane-${t}" style="${t === "stats" ? "" : "display:none;"}"></div>`).join("")}
         </div>
@@ -294,6 +317,7 @@ const AdminGame = (() => {
       if (key === "chatmod") loadChatMod();
       if (key === "scratch") loadScratch();
       if (key === "prizes") loadPrizes();
+      if (key === "subscriptions") loadSubscriptions();
     }
 
     // ── Stats ──────────────────────────────────────────────────────────────────
@@ -429,7 +453,7 @@ const AdminGame = (() => {
           tableBody.innerHTML = `<tr><td colspan="9" style="padding:30px;text-align:center;color:var(--text-dim);">No users found.</td></tr>`;
         } else {
           tableBody.innerHTML = users.map((u) => {
-            const isOwnerUser = (u.username || "").toLowerCase() === "ditol21";
+            const isOwnerUser = (u.rank || "") === "owner";
             const rankSelectHtml = isOwnerUser
               ? `<span style="color:var(--accent-2);font-weight:700;font-size:0.8rem;">👑 Owner</span>`
               : `<select class="adm-rank-select" data-id="${u.id}" style="${S.rankSelect}">
@@ -2106,6 +2130,203 @@ const AdminGame = (() => {
       } catch (err) {
         pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
       }
+    }
+
+    // ── Subscriptions ──────────────────────────────────────────────────────────
+    async function loadSubscriptions() {
+      const pane = container.querySelector("#adm-pane-subscriptions");
+      if (!pane) return;
+
+      async function render() {
+        pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading subscriptions…</div>`;
+        try {
+          const [pendingData, allData] = await Promise.all([
+            Api.get("/admin/subscriptions/pending"),
+            Api.get("/admin/subscriptions"),
+          ]);
+
+          const pending = pendingData.users || [];
+          const all = allData.users || [];
+
+          function tierBadge(tier) {
+            if (!tier) return `<span style="color:var(--text-dim);font-size:0.78rem;">None</span>`;
+            const t = PATREON_TIER_INFO[tier] || { label: tier, c: "#9ca3af" };
+            return `<span style="color:${t.c};font-weight:700;font-size:0.78rem;">${t.label}</span>`;
+          }
+
+          function approvalStatus(u) {
+            if (!u.isApproved) return `<span style="color:var(--loss);font-weight:700;font-size:0.78rem;">⏳ Pending</span>`;
+            const expiry = u.approvedUntil ? new Date(u.approvedUntil) : null;
+            if (expiry && expiry < new Date()) return `<span style="color:var(--loss);font-weight:700;font-size:0.78rem;">⚠️ Expired</span>`;
+            const daysLeft = expiry ? Math.ceil((expiry - Date.now()) / 86400000) : null;
+            return `<span style="color:var(--win);font-weight:700;font-size:0.78rem;">✅ Active${daysLeft !== null ? ` (${daysLeft}d left)` : ""}</span>`;
+          }
+
+          pane.innerHTML = `
+            <div style="${S.sectionCard}">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+                <h3 style="${S.sectionTitle};margin:0;">⏳ Pending Approvals (${pending.length})</h3>
+                <button id="adm-sub-revoke-expired" style="${S.redBtn}">Revoke All Expired</button>
+              </div>
+              ${pending.length === 0
+                ? `<p style="color:var(--text-dim);font-size:0.88rem;">No pending requests.</p>`
+                : `<div style="${S.tableWrap}">
+                  <table style="${S.table}">
+                    <thead><tr>
+                      <th style="${S.th}">Username</th>
+                      <th style="${S.th}">Patreon</th>
+                      <th style="${S.th}">Registered</th>
+                      <th style="${S.th}">Tier</th>
+                      <th style="${S.th}">Days</th>
+                      <th style="${S.th}">Approve</th>
+                    </tr></thead>
+                    <tbody>
+                      ${pending.map(u => `
+                        <tr>
+                          <td style="${S.td};font-weight:700;color:var(--accent-2);">${u.username}</td>
+                          <td style="${S.td};font-style:italic;color:var(--text-dim);">${u.patreonUsername || "—"}</td>
+                          <td style="${S.td};color:var(--text-dim);">${fmtDate(u.createdAt)}</td>
+                          <td style="${S.td};">
+                            <select class="adm-sub-tier" data-id="${u.id}" style="${S.rankSelect}">
+                              ${Object.entries(PATREON_TIER_INFO).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join("")}
+                            </select>
+                          </td>
+                          <td style="${S.td};">
+                            <input class="adm-sub-days" data-id="${u.id}" type="number" value="31" min="1" max="365"
+                              style="${S.rankSelect};width:60px;" />
+                          </td>
+                          <td style="${S.td};">
+                            <button class="adm-sub-approve" data-id="${u.id}" style="${S.greenBtn}">✅ Approve</button>
+                          </td>
+                        </tr>`).join("")}
+                    </tbody>
+                  </table>
+                </div>`}
+            </div>
+
+            <div style="${S.sectionCard}">
+              <h3 style="${S.sectionTitle}">🔑 All Subscriptions</h3>
+              <div style="${S.tableWrap}">
+                <table style="${S.table}">
+                  <thead><tr>
+                    <th style="${S.th}">Username</th>
+                    <th style="${S.th}">Patreon</th>
+                    <th style="${S.th}">Tier</th>
+                    <th style="${S.th}">Status</th>
+                    <th style="${S.th}">Expires</th>
+                    <th style="${S.th}">Actions</th>
+                  </tr></thead>
+                  <tbody>
+                    ${all.map(u => `
+                      <tr>
+                        <td style="${S.td};font-weight:700;color:var(--accent-2);">${u.username}</td>
+                        <td style="${S.td};color:var(--text-dim);">${u.patreonUsername || "—"}</td>
+                        <td style="${S.td};">${tierBadge(u.patreonTier)}</td>
+                        <td style="${S.td};">${approvalStatus(u)}</td>
+                        <td style="${S.td};color:var(--text-dim);">${u.approvedUntil ? new Date(u.approvedUntil).toLocaleDateString() : "—"}</td>
+                        <td style="${S.td};">
+                          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            ${!u.isApproved
+                              ? `<button class="adm-sub-approve-quick" data-id="${u.id}" style="${S.greenBtn}">Approve 31d</button>`
+                              : `<button class="adm-sub-extend" data-id="${u.id}" style="${S.smallBtn}">+31d</button>`}
+                            ${u.isApproved
+                              ? `<button class="adm-sub-revoke" data-id="${u.id}" style="${S.redBtn}">Revoke</button>`
+                              : ""}
+                          </div>
+                        </td>
+                      </tr>`).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+
+          // Approve pending user
+          pane.querySelectorAll(".adm-sub-approve").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const id = btn.dataset.id;
+              const tier = pane.querySelector(`.adm-sub-tier[data-id="${id}"]`).value;
+              const days = Number(pane.querySelector(`.adm-sub-days[data-id="${id}"]`).value) || 31;
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${id}/approve`, { patreonTier: tier, daysValid: days });
+                UI.toast("User approved!", "win");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "✅ Approve";
+              }
+            });
+          });
+
+          // Quick approve (31d default bronze)
+          pane.querySelectorAll(".adm-sub-approve-quick").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${btn.dataset.id}/approve`, { patreonTier: "bronze_patron", daysValid: 31 });
+                UI.toast("Approved for 31 days!", "win");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "Approve 31d";
+              }
+            });
+          });
+
+          // Extend subscription
+          pane.querySelectorAll(".adm-sub-extend").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${btn.dataset.id}/approve`, { patreonTier: "bronze_patron", daysValid: 31 });
+                UI.toast("Extended by 31 days!", "win");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "+31d";
+              }
+            });
+          });
+
+          // Revoke subscription
+          pane.querySelectorAll(".adm-sub-revoke").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              if (!confirm("Revoke this user's subscription?")) return;
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${btn.dataset.id}/revoke`, {});
+                UI.toast("Subscription revoked.", "info");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "Revoke";
+              }
+            });
+          });
+
+          // Revoke all expired
+          const revokeExpiredBtn = pane.querySelector("#adm-sub-revoke-expired");
+          if (revokeExpiredBtn) {
+            revokeExpiredBtn.addEventListener("click", async () => {
+              if (!confirm("Revoke all expired subscriptions?")) return;
+              revokeExpiredBtn.disabled = true; revokeExpiredBtn.textContent = "Working…";
+              try {
+                const r = await Api.post("/admin/subscriptions/revoke-expired", {});
+                UI.toast(`Revoked ${r.revoked} expired subscriptions.`, "info");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                revokeExpiredBtn.disabled = false; revokeExpiredBtn.textContent = "Revoke All Expired";
+              }
+            });
+          }
+        } catch (err) {
+          pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+        }
+      }
+
+      render();
     }
 
     buildSkeleton();

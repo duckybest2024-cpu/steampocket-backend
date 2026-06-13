@@ -810,3 +810,73 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
   50%  { opacity: 0.7; }
   100% { opacity: 0; }
 }
+
+/* ── Casino Textures ──────────────────────────────────────────────────────── */
+.casino-felt {
+  background: url('/images/felt.jpg') center/cover;
+}
+.casino-felt-blue {
+  background: url('/images/felt-blue.jpg') center/cover;
+}
+.casino-wood {
+  background: url('/images/wood.jpg') center/cover;
+}
+.casino-marble {
+  background: url('/images/marble-dark.jpg') center/cover;
+}
+
+/* Blackjack / Baccarat table */
+.bj-area, .bacc-table {
+  background: url('/images/felt.jpg') center/cover;
+  border-radius: 16px;
+  border: 3px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.45);
+  padding: 20px;
+}
+
+/* Roulette board */
+.roulette-board-wrap {
+  background: url('/images/felt-blue.jpg') center/cover;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
+  padding: 14px;
+}
+
+/* Card back image for hidden cards */
+.card.hidden-card {
+  background: url('/images/card-back.png') center/cover !important;
+  color: transparent !important;
+}
+
+/* Chip icons — used in chip shop and balance display */
+.chip-icon-red    { background: url('/images/chip-red.svg')   center/contain no-repeat; }
+.chip-icon-blue   { background: url('/images/chip-blue.svg')  center/contain no-repeat; }
+.chip-icon-black  { background: url('/images/chip-black.svg') center/contain no-repeat; }
+.chip-icon-gold   { background: url('/images/chip-gold.svg')  center/contain no-repeat; }
+
+/* Dice images for dice game */
+.dice-face[data-face="1"] { background-image: url('/images/dice-1.png'); }
+.dice-face[data-face="2"] { background-image: url('/images/dice-2.png'); }
+.dice-face[data-face="3"] { background-image: url('/images/dice-3.png'); }
+.dice-face[data-face="4"] { background-image: url('/images/dice-4.png'); }
+.dice-face[data-face="5"] { background-image: url('/images/dice-5.png'); }
+.dice-face[data-face="6"] { background-image: url('/images/dice-6.png'); }
+.dice-face {
+  width: 64px; height: 64px;
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+
+/* Wood texture for poker/bridge tables */
+.poker-table-wrap {
+  background: url('/images/wood.jpg') center/cover;
+  border-radius: 16px;
+  border: 3px solid rgba(139,90,43,0.5);
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+  padding: 16px;
+}
+
+/* Auth / pending screen card on marble */
+.auth-card {
+  background: var(--bg-card);
+}

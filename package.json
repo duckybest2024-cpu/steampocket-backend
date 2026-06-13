@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "vercel-build": "prisma generate && tsc -p tsconfig.json && npx prisma db push --skip-generate --accept-data-loss",
+    "vercel-build": "prisma generate && tsc -p tsconfig.json && npx prisma db push --skip-generate",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "postinstall": "prisma generate",

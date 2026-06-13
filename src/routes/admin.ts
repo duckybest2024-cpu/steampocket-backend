@@ -13,7 +13,7 @@ const adminOnly: RequestHandler[] = [
   requireAuth as RequestHandler,
   async (req: AuthedRequest, res, next) => {
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
-    if (!user || !isOwner(user.username)) {
+    if (!user || (!isOwner(user.username) && !user.isAdmin)) {
       return res.status(403).json({ error: "Admin only" });
     }
     next();
@@ -263,7 +263,7 @@ adminRouter.post("/bank/adjust", async (req, res) => {
 // PATCH /users/:userId/rank — set a user's rank
 // ---------------------------------------------------------------------------
 const rankSchema = z.object({
-  rank: z.enum(["bronze", "silver", "gold", "platinum", "diamond"]),
+  rank: z.enum(["newcomer","beginner","amateur","apprentice","bronze","silver","gold","platinum","diamond","emerald","sapphire","ruby","jade","crystal","elite","master","grandmaster","legend","titan","owner"]),
 });
 
 adminRouter.patch("/users/:userId/rank", async (req, res) => {
@@ -985,6 +985,107 @@ adminRouter.post("/prizes/:id/draw", async (req, res) => {
     res.json({ ok: true, prize });
   } catch (err) {
     console.error("POST /admin/prizes/:id/draw error:", err);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// ===========================================================================
+// 11. PATREON SUBSCRIPTION MANAGEMENT
+// ===========================================================================
+
+// GET /admin/subscriptions/pending — users awaiting approval
+adminRouter.get("/subscriptions/pending", async (_req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { isApproved: false },
+      select: { id: true, username: true, email: true, patreonUsername: true, patreonTier: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// GET /admin/subscriptions — all subscription statuses
+adminRouter.get("/subscriptions", async (_req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true, email: true, patreonUsername: true, patreonTier: true, isApproved: true, approvedUntil: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+const approveSchema = z.object({
+  patreonTier: z.enum(["bronze_patron","silver_patron","gold_patron","platinum_patron","diamond_patron"]).optional(),
+  daysValid: z.number().int().min(1).max(365).optional(),
+});
+
+// POST /admin/subscriptions/:userId/approve — approve a user's subscription
+adminRouter.post("/subscriptions/:userId/approve", async (req, res) => {
+  const parsed = approveSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const { userId } = req.params;
+  const { patreonTier = "bronze_patron", daysValid = 31 } = parsed.data;
+
+  try {
+    const approvedUntil = new Date(Date.now() + daysValid * 24 * 60 * 60 * 1000);
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { isApproved: true, approvedUntil, patreonTier },
+      select: { id: true, username: true, isApproved: true, approvedUntil: true, patreonTier: true },
+    });
+    res.json({ ok: true, user });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to approve user" });
+  }
+});
+
+// POST /admin/subscriptions/:userId/revoke — revoke a user's subscription
+adminRouter.post("/subscriptions/:userId/revoke", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { isApproved: false, approvedUntil: null, patreonTier: null },
+      select: { id: true, username: true, isApproved: true },
+    });
+    res.json({ ok: true, user });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to revoke subscription" });
+  }
+});
+
+// POST /admin/subscriptions/revoke-expired — revoke all expired subscriptions
+adminRouter.post("/subscriptions/revoke-expired", async (_req, res) => {
+  try {
+    const result = await prisma.user.updateMany({
+      where: { isApproved: true, approvedUntil: { lt: new Date() } },
+      data: { isApproved: false, patreonTier: null },
+    });
+    res.json({ ok: true, revoked: result.count });
+  } catch (err) {
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
+// PATCH /admin/users/:userId/admin — toggle isAdmin flag
+adminRouter.patch("/users/:userId/admin", async (req, res) => {
+  const { userId } = req.params;
+  const { isAdmin } = req.body as { isAdmin?: boolean };
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (isOwner(user.username)) return res.status(400).json({ error: "Cannot change owner admin status" });
+    const updated = await prisma.user.update({ where: { id: userId }, data: { isAdmin: isAdmin ?? !user.isAdmin } });
+    res.json({ isAdmin: updated.isAdmin });
+  } catch (err) {
     res.status(500).json({ error: "Failed" });
   }
 });

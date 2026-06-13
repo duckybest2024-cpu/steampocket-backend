@@ -26,10 +26,17 @@ model User {
 
   isBanned      Boolean  @default(false)
   nickname      String?
-  rank          String   @default("bronze")
+  rank          String   @default("newcomer")
   emailVerified    Boolean  @default(false)
   emailToken       String?
   emailTokenExpiry DateTime?
+
+  // Patreon subscription system
+  patreonUsername  String?
+  isApproved       Boolean   @default(true)   // true for pre-existing accounts; false for new registrations
+  approvedUntil    DateTime?
+  patreonTier      String?                     // bronze_patron | silver_patron | gold_patron | platinum_patron | diamond_patron
+  isAdmin          Boolean   @default(false)
 
   // Anti-cheat
   flagged       Boolean  @default(false)

@@ -1,6 +1,6 @@
 /* Casino Aurelius — App shell with Stake-inspired sidebar layout */
 const App = (() => {
-  const state = { id: null, username: null, nickname: null, rank: "bronze", balance: 0, bank: 0, level: 1, xp: 0, fairness: null };
+  const state = { id: null, username: null, nickname: null, rank: "newcomer", balance: 0, bank: 0, level: 1, xp: 0, fairness: null, isAdmin: false, isApproved: true, patreonUsername: null, patreonTier: null };
   let _lowBalanceToastShown = false;
 
   const NAV = [
@@ -64,11 +64,16 @@ const App = (() => {
       ],
     },
     {
-      section: "Account",
+      section: "NFT & Trading",
       items: [
         { key: "nfts",        icon: "🖼️", label: "NFT Collection",   mod: () => NFTsGame },
         { key: "nftmarket",   icon: "🏪", label: "NFT Marketplace",  mod: () => NFTMarketGame },
         { key: "cases",       icon: "📦", label: "Cases",             mod: () => CasesGame },
+      ],
+    },
+    {
+      section: "Account",
+      items: [
         { key: "chipshop",    icon: "🏦", label: "Chip Shop",         mod: () => ChipShopGame },
         { key: "leaderboard", icon: "🏆", label: "Leaderboard",       mod: () => LeaderboardGame },
         { key: "friends",     icon: "👥", label: "Friends",           mod: () => FriendsGame },
@@ -90,7 +95,7 @@ const App = (() => {
     nav.innerHTML = "";
 
     const sections = [...NAV];
-    if ((state.username || "").toLowerCase() === "ditol21") {
+    if (state.isAdmin || state.rank === "owner") {
       const acct = sections.find((s) => s.section === "Account");
       if (acct && !acct.items.find((i) => i.key === "admin")) {
         acct.items.unshift(ADMIN_ITEM);
@@ -191,12 +196,16 @@ const App = (() => {
     state.id = user.id;
     state.username = user.username;
     state.nickname = user.nickname ?? null;
-    state.rank = user.rank ?? "bronze";
+    state.rank = user.rank ?? "newcomer";
     state.balance = user.balance;
     state.bank = user.bank ?? 0;
     state.level = user.level;
     state.xp = user.xp;
     state.fairness = user.fairness;
+    state.isAdmin = user.isAdmin ?? false;
+    state.isApproved = user.isApproved ?? true;
+    state.patreonUsername = user.patreonUsername ?? null;
+    state.patreonTier = user.patreonTier ?? null;
 
     // Sidebar balance
     const balEl = document.getElementById("balance-amount");
@@ -228,7 +237,14 @@ const App = (() => {
 
   function showScreen(name) {
     document.getElementById("auth-screen").classList.toggle("hidden", name !== "auth");
+    document.getElementById("pending-screen").classList.toggle("hidden", name !== "pending");
     document.getElementById("app-screen").classList.toggle("hidden", name !== "app");
+  }
+
+  function showPendingApproval(user) {
+    const el = document.getElementById("pending-patreon-name");
+    if (el) el.textContent = user.patreonUsername || "Not provided";
+    showScreen("pending");
   }
 
   function showVerifyEmailUI(email, verificationLink) {
@@ -297,7 +313,11 @@ const App = (() => {
       try {
         const data = await Api.login({ identifier: fd.get("identifier"), password: fd.get("password") });
         Api.setToken(data.token);
-        await enterApp();
+        if (data.pendingApproval || (data.user && data.user.isApproved === false)) {
+          showPendingApproval(data.user || {});
+        } else {
+          await enterApp();
+        }
       } catch (err) {
         if (err.emailNotVerified) showVerifyEmailUI(err.email, null);
         else showError(err.message);
@@ -310,11 +330,20 @@ const App = (() => {
       const fd = new FormData(e.target);
       const emailVal = fd.get("email");
       try {
-        const data = await Api.register({ username: fd.get("username"), email: emailVal, password: fd.get("password") });
+        const data = await Api.register({
+          username: fd.get("username"),
+          email: emailVal,
+          password: fd.get("password"),
+          patreonUsername: fd.get("patreonUsername"),
+        });
         if (data.token) {
           Api.setToken(data.token);
-          UI.toast("Welcome to Casino Aurelius! Visit Chip Shop to buy chips.", "win");
-          await enterApp();
+          if (data.user && data.user.isApproved === false) {
+            showPendingApproval(data.user);
+          } else {
+            UI.toast("Welcome to Casino Aurelius! Visit Chip Shop to buy chips.", "win");
+            await enterApp();
+          }
         }
       } catch (err) {
         showError(err.message);
@@ -369,6 +398,14 @@ const App = (() => {
       showScreen("auth");
     });
 
+    const pendingLogout = document.getElementById("pending-logout-btn");
+    if (pendingLogout) {
+      pendingLogout.addEventListener("click", () => {
+        Api.setToken(null);
+        showScreen("auth");
+      });
+    }
+
     document.getElementById("menu-toggle").addEventListener("click", openSidebar);
     document.getElementById("sidebar-close").addEventListener("click", closeSidebar);
     document.getElementById("sidebar-overlay").addEventListener("click", closeSidebar);
@@ -379,7 +416,15 @@ const App = (() => {
     wireTopbar();
 
     if (Api.getToken()) {
-      try { await enterApp(); return; } catch { Api.setToken(null); }
+      try {
+        const { user } = await Api.me();
+        if (user.isApproved === false) {
+          showPendingApproval(user);
+          return;
+        }
+        await enterApp();
+        return;
+      } catch { Api.setToken(null); }
     }
     showScreen("auth");
   }

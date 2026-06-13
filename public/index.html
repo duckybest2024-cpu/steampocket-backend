@@ -57,10 +57,54 @@
             <label>Password</label>
             <input name="password" type="password" placeholder="8+ characters" autocomplete="new-password" required />
           </div>
+          <div class="auth-field">
+            <label>Patreon Username <span style="color:var(--accent-2);font-size:0.78rem;">(required for access)</span></label>
+            <input name="patreonUsername" placeholder="Your Patreon username" autocomplete="off" required />
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-dim);margin:4px 0 8px;line-height:1.5;">
+            🔒 Access requires a $1/month Patreon subscription. After registering, submit a request and an admin will verify your subscription and grant access.
+          </p>
           <button type="submit" class="auth-submit">Create Account</button>
         </form>
 
         <p id="auth-error" class="auth-error hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ PENDING APPROVAL SCREEN ═════════ -->
+  <div id="pending-screen" class="screen hidden">
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <span class="auth-logo-icon">⏳</span>
+          <div>
+            <div class="auth-logo-name">Casino Aurelius</div>
+            <div class="auth-logo-sub">Access Pending Approval</div>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
+          <h2 style="margin:0 0 12px;font-size:1.2rem;color:var(--text);">Your account is under review</h2>
+          <p style="color:var(--text-dim);font-size:0.88rem;line-height:1.7;margin:0 0 20px;">
+            To play at Casino Aurelius, you need an active <strong style="color:var(--accent-2);">Patreon subscription</strong> ($1/month minimum).
+            An admin will verify your Patreon account and grant access shortly.
+          </p>
+          <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left;">
+            <div style="font-size:0.78rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Patreon Tiers</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:0.85rem;">
+              <div>🥉 <strong style="color:#cd7f32;">Bronze Patron</strong> — $1/month · Basic access</div>
+              <div>🥈 <strong style="color:#c0c0c0;">Silver Patron</strong> — $5/month · +50% daily bonus</div>
+              <div>🥇 <strong style="color:#ffd700;">Gold Patron</strong> — $10/month · Double XP + VIP chip</div>
+              <div>💠 <strong style="color:#b9f2ff;">Platinum Patron</strong> — $25/month · Exclusive games + 3× bonus</div>
+              <div>💎 <strong style="color:#00e5ff;">Diamond Patron</strong> — $50/month · All perks + custom NFT</div>
+            </div>
+          </div>
+          <p style="color:var(--text-dim);font-size:0.8rem;margin:0 0 20px;">
+            Patreon username submitted: <strong id="pending-patreon-name" style="color:var(--text);">—</strong>
+          </p>
+          <button id="pending-logout-btn" class="auth-submit" style="background:var(--bg-elev);border:1px solid var(--border);color:var(--text-dim);">Log Out</button>
+        </div>
       </div>
     </div>
   </div>
