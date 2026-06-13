@@ -502,7 +502,7 @@ const CheckersGame = (() => {
     function handleCellClick(r, c) {
       if (gameStatus !== 'playing') return;
       if (turn !== myColor) {
-        showToast("It's not your turn", 'error');
+        UI.toast("It's not your turn", 'loss');
         return;
       }
 
@@ -557,7 +557,7 @@ const CheckersGame = (() => {
       if (mustJumpPieces.length > 0) {
         const isMustJump = mustJumpPieces.some(([mr, mc]) => mr === r && mc === c);
         if (!isMustJump) {
-          showToast('You must jump with a different piece!', 'error');
+          UI.toast('You must jump with a different piece!', 'loss');
           return;
         }
       }
@@ -657,7 +657,7 @@ const CheckersGame = (() => {
     });
 
     socket.on('bg:error', (msg) => {
-      showToast(msg || 'Move error', 'error');
+      UI.toast(msg || 'Move error', 'loss');
       selected = null;
       legalDests = [];
       jumpDests = [];

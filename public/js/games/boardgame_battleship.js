@@ -625,7 +625,7 @@ const BattleshipGame = (() => {
       const cells = getShipCells(r, c, ship.size, isHorizontal);
 
       if (!isValidPlacement(cells, placedShips)) {
-        showToast("Can't place ship there — overlapping or out of bounds", "loss");
+        UI.toast("Can't place ship there — overlapping or out of bounds", "loss");
         return;
       }
 
@@ -778,7 +778,7 @@ const BattleshipGame = (() => {
     // ── Socket event: error ──
     socket.on("bg:error", ({ roomId, message }) => {
       if (roomId !== room.id) return;
-      showToast(message || "An error occurred", "loss");
+      UI.toast(message || "An error occurred", "loss");
       submitBtn.disabled = false;
     });
   }

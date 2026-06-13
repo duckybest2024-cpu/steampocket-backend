@@ -37,10 +37,10 @@ const BoardGamesGame = (() => {
   // ─── Socket bootstrap ─────────────────────────────────────────────────────
   function initSocket() {
     if (socket) return;
-    socket = io("/boardgames", { auth: { token: Auth.getToken() } });
+    socket = io("/boardgames", { auth: { token: Api.getToken() } });
 
     socket.on("connect_error", (err) => {
-      showToast("Board games connection failed: " + err.message, "error");
+      UI.toast("Board games connection failed: " + err.message, "loss");
     });
 
     socket.on("bg:me", (data) => {
@@ -66,7 +66,7 @@ const BoardGamesGame = (() => {
     });
 
     socket.on("bg:error", (msg) => {
-      showToast(typeof msg === "string" ? msg : (msg.message || "Board game error"), "error");
+      UI.toast(typeof msg === "string" ? msg : (msg.message || "Board game error"), "loss");
     });
 
     socket.on("bg:joined", (roomState) => {
@@ -75,7 +75,7 @@ const BoardGamesGame = (() => {
     });
 
     socket.on("bg:chips-update", (chips) => {
-      if (typeof updateBalance === "function") updateBalance(chips);
+      UI.setBalance(chips * 100);
     });
   }
 
@@ -226,11 +226,11 @@ const BoardGamesGame = (() => {
       const maxPlayers = parseInt(overlay.querySelector("#bg-maxp-input").value, 10);
 
       if (!bet || bet < 1) {
-        showToast("Bet must be at least 1 chip", "error");
+        UI.toast("Bet must be at least 1 chip", "loss");
         return;
       }
       if (game.minP !== game.maxP && (maxPlayers < game.minP || maxPlayers > game.maxP)) {
-        showToast(`Max players must be between ${game.minP} and ${game.maxP}`, "error");
+        UI.toast(`Max players must be between ${game.minP} and ${game.maxP}`, "loss");
         return;
       }
 

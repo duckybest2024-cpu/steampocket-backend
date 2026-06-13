@@ -543,7 +543,7 @@ const ChessGame = (() => {
     function handleCellClick(r, c) {
       if (gameStatus !== 'playing') return;
       if (turn !== myColor) {
-        showToast("It's not your turn", 'error');
+        UI.toast("It's not your turn", 'loss');
         return;
       }
 
@@ -636,7 +636,7 @@ const ChessGame = (() => {
     });
 
     socket.on('bg:error', (msg) => {
-      showToast(msg || 'Move error', 'error');
+      UI.toast(msg || 'Move error', 'loss');
       // Revert to server state if available
       selected = null;
       legalMoves = [];

@@ -28,7 +28,11 @@ const UI = (() => {
 
   function setBalance(cents) {
     const chips = Math.floor(cents / 100);
-    document.getElementById("balance-amount").textContent = chips.toLocaleString();
+    const formatted = chips.toLocaleString();
+    const balEl = document.getElementById("balance-amount");
+    const tbEl = document.getElementById("topbar-balance");
+    if (balEl) balEl.textContent = formatted + " 🪙";
+    if (tbEl) tbEl.textContent = formatted;
   }
 
   function setLevel(level, xp) {

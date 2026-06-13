@@ -399,7 +399,7 @@ const BoardPokerGame = (() => {
 
     socket.on("bg:move_result", ({ success, error, state: newState }) => {
       if (!success && error) {
-        showToast(error, "loss");
+        UI.toast(error, "loss");
       }
       if (newState) {
         state = newState;
@@ -408,7 +408,7 @@ const BoardPokerGame = (() => {
     });
 
     socket.on("bg:error", (msg) => {
-      showToast(typeof msg === "string" ? msg : (msg?.message || "Move error"), "loss");
+      UI.toast(typeof msg === "string" ? msg : (msg?.message || "Move error"), "loss");
     });
 
     socket.on("bg:game_over", ({ winners, pot, winnerNames }) => {
@@ -419,10 +419,10 @@ const BoardPokerGame = (() => {
         ? (Array.isArray(winnerNames) ? winnerNames.join(", ") : winnerNames)
         : "Someone";
       if (isWinner) {
-        showToast(`You won the pot of ${chips(pot || 0)} chips!`, "win");
+        UI.toast(`You won the pot of ${chips(pot || 0)} chips!`, "win");
         if (typeof updateBalance === "function") updateBalance(pot);
       } else {
-        showToast(`${names} won the pot of ${chips(pot || 0)} chips`, "info");
+        UI.toast(`${names} won the pot of ${chips(pot || 0)} chips`, "info");
       }
     });
 

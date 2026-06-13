@@ -647,13 +647,13 @@ const MonopolyGame = (() => {
     });
 
     socket.on("bg:error", (msg) => {
-      showToast(msg, "loss");
+      UI.toast(msg, "loss");
     });
 
     socket.on("bg:gameOver", ({ winner, winnerName }) => {
       const won = winner === myUserId;
       const name = winnerName || "Someone";
-      showToast(
+      UI.toast(
         won ? "You won the game!" : `${name} won the game!`,
         won ? "win" : "loss"
       );

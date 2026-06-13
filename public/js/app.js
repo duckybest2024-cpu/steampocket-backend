@@ -5,6 +5,12 @@ const App = (() => {
 
   const NAV = [
     {
+      section: "Home",
+      items: [
+        { key: "lobby",       icon: "🏠", label: "Lobby",         mod: () => LobbyGame },
+      ],
+    },
+    {
       section: "Casino",
       items: [
         { key: "crash",       icon: "🚀", label: "Crash",        mod: () => CrashGame },
@@ -299,7 +305,7 @@ const App = (() => {
         const data = await Api.register({ username: fd.get("username"), email: emailVal, password: fd.get("password") });
         if (data.token) {
           Api.setToken(data.token);
-          UI.toast("Welcome to Casino Aurelius! 1,000 chips added. 🎉", "win");
+          UI.toast("Welcome to Casino Aurelius! Visit Chip Shop to buy chips.", "win");
           await enterApp();
         }
       } catch (err) {
@@ -336,7 +342,7 @@ const App = (() => {
       UI.toast("Payment cancelled.", "info");
       mount("chipshop");
     } else {
-      mount("crash");
+      mount("lobby");
     }
   }
 

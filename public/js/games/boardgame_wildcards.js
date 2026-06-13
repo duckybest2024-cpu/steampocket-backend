@@ -312,7 +312,7 @@ const WildCardsGame = (() => {
 
     socket.on("bg:move_result", ({ success, error, state: newState }) => {
       if (!success && error) {
-        showToast(error, "loss");
+        UI.toast(error, "loss");
       }
       if (newState) {
         state = newState;
@@ -321,12 +321,12 @@ const WildCardsGame = (() => {
     });
 
     socket.on("bg:error", (msg) => {
-      showToast(typeof msg === "string" ? msg : (msg?.message || "Move error"), "loss");
+      UI.toast(typeof msg === "string" ? msg : (msg?.message || "Move error"), "loss");
     });
 
     socket.on("bg:game_over", ({ winner, winnerName }) => {
       const isWinner = winner === myUserId;
-      showToast(isWinner ? `You won! UNO champion!` : `${winnerName} wins the game!`, isWinner ? "win" : "info");
+      UI.toast(isWinner ? `You won! UNO champion!` : `${winnerName} wins the game!`, isWinner ? "win" : "info");
     });
 
     /* Initial render */

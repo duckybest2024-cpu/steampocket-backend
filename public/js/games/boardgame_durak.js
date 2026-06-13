@@ -709,7 +709,7 @@ const DurakGame = (() => {
     btnAttack.addEventListener("click", () => {
       const hand = currentState.hand || [];
       if (selectedHandIdx < 0 || selectedHandIdx >= hand.length) {
-        showToast("Select a card from your hand to attack with", "loss");
+        UI.toast("Select a card from your hand to attack with", "loss");
         return;
       }
       const card = hand[selectedHandIdx];
@@ -724,11 +724,11 @@ const DurakGame = (() => {
       const hand  = currentState.hand  || [];
       const table = currentState.table || [];
       if (selectedHandIdx < 0 || selectedHandIdx >= hand.length) {
-        showToast("Select a card from your hand to defend with", "loss");
+        UI.toast("Select a card from your hand to defend with", "loss");
         return;
       }
       if (selectedPairIdx < 0 || selectedPairIdx >= table.length) {
-        showToast("Select an attack card on the table to defend against", "loss");
+        UI.toast("Select an attack card on the table to defend against", "loss");
         return;
       }
       const defendCard = hand[selectedHandIdx];
@@ -785,7 +785,7 @@ const DurakGame = (() => {
 
     socket.on("bg:error", ({ roomId, message }) => {
       if (roomId !== room.id) return;
-      showToast(message || "Invalid move", "loss");
+      UI.toast(message || "Invalid move", "loss");
       // Re-render to restore valid state
       renderAll(currentState);
     });

@@ -657,7 +657,7 @@ const BridgeGame = (() => {
     });
 
     socket.on("bg:error", (msg) => {
-      showToast(msg, "loss");
+      UI.toast(msg, "loss");
     });
 
     socket.on("bg:gameOver", ({ winner, score }) => {
@@ -665,7 +665,7 @@ const BridgeGame = (() => {
       const ew = score?.ew ?? 0;
       const isNS = mySeat === "N" || mySeat === "S";
       const won = (winner === "NS" && isNS) || (winner === "EW" && !isNS);
-      showToast(
+      UI.toast(
         `Game over! ${winner} wins. Final score — NS: ${ns}, EW: ${ew}`,
         won ? "win" : "loss"
       );
