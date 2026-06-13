@@ -56,6 +56,12 @@ const App = (() => {
       ],
     },
     {
+      section: "Community",
+      items: [
+        { key: "chat", icon: "💬", label: "Chat", mod: () => ChatGame },
+      ],
+    },
+    {
       section: "Account",
       items: [
         { key: "nfts",        icon: "🖼️", label: "NFT Collection",   mod: () => NFTsGame },
