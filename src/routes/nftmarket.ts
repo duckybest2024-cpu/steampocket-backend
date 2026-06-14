@@ -263,6 +263,51 @@ nftMarketRouter.post("/use/:nftId", requireAuth, async (req: AuthedRequest, res:
         break;
       }
 
+      case "cashback": {
+        await applyLedgerEntry(prisma, userId, "nft_power", power.value * 100, nftId);
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        balance = (user?.balance ?? 0) / 100;
+        effectDescription = `Cashback activated: +${power.value} chips refunded`;
+        break;
+      }
+
+      case "bank_bonus": {
+        await prisma.user.update({ where: { id: userId }, data: { bank: { increment: power.value * 100 } } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        balance = (user?.balance ?? 0) / 100;
+        effectDescription = `Bank bonus: +${power.value} chips added to your bank`;
+        break;
+      }
+
+      case "double_chips": {
+        const userBefore = await prisma.user.findUnique({ where: { id: userId } });
+        const boost = power.value * 100;
+        await applyLedgerEntry(prisma, userId, "nft_power", boost, nftId);
+        const userAfter = await prisma.user.findUnique({ where: { id: userId } });
+        balance = (userAfter?.balance ?? 0) / 100;
+        effectDescription = `Double chips boost: +${power.value} chips`;
+        break;
+      }
+
+      case "lucky_draw": {
+        const min = Math.floor(power.value / 2);
+        const max = power.value * 2;
+        const prize = min + Math.floor(Math.random() * (max - min + 1));
+        await applyLedgerEntry(prisma, userId, "nft_power", prize * 100, nftId);
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        balance = (user?.balance ?? 0) / 100;
+        effectDescription = `Lucky draw! You won ${prize} chips (range: ${min}–${max})`;
+        break;
+      }
+
+      case "vip_chips": {
+        await applyLedgerEntry(prisma, userId, "nft_power", power.value * 100, nftId);
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        balance = (user?.balance ?? 0) / 100;
+        effectDescription = `VIP reward: +${power.value} chips added`;
+        break;
+      }
+
       default:
         return res.status(400).json({ error: "Unknown power type" });
     }

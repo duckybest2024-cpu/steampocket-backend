@@ -8,6 +8,7 @@ import { JackpotEngine } from "./sockets/jackpotEngine";
 import { HorseRaceEngine } from "./sockets/horseRaceEngine";
 import { attachBattleDice, attachRPS, attachRaffle, attachBingo, attachTower, attachMultiRoulette, attachPoker } from "./sockets/multiplayerGamesEngine";
 import { attachBoardGames } from "./sockets/boardGamesEngine";
+import { ChatEngine } from "./sockets/chatEngine";
 
 process.on("uncaughtException", (err) => {
   console.error("FATAL uncaughtException (continuing):", err);
@@ -54,6 +55,7 @@ async function waitForDb(retries = 10): Promise<void> {
   attachMultiRoulette(io);
   attachPoker(io);
   attachBoardGames(io);
+  new ChatEngine(io);
 
   httpServer.listen(config.port, () => {
     console.log(`🎰 Casino Aurelius listening on :${config.port}`);

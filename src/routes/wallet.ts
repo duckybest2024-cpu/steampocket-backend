@@ -298,6 +298,29 @@ walletRouter.post("/promo/redeem", requireAuth, async (req: AuthedRequest, res) 
   } catch (err) { res.status(500).json({ error: "Failed to redeem code" }); }
 });
 
+// ---------------------------------------------------------------------------
+// Daily Login Bonus
+// ---------------------------------------------------------------------------
+
+const dailyBonusClaimed = new Map<string, string>(); // userId -> ISO date (YYYY-MM-DD)
+
+walletRouter.post("/daily-bonus", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const today = new Date().toISOString().slice(0, 10);
+    if (dailyBonusClaimed.get(userId) === today) {
+      return res.status(400).json({ error: "Already claimed today's bonus" });
+    }
+    const chipsToAward = 50 * 100; // 50 chips in cents
+    await applyLedgerEntry(prisma, userId, "daily_bonus", chipsToAward);
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { balance: true } });
+    dailyBonusClaimed.set(userId, today);
+    return res.json({ chips: 50, streak: 1, balance: user?.balance ?? 0 });
+  } catch (err) {
+    return res.status(500).json({ error: "Failed to claim daily bonus" });
+  }
+});
+
 walletRouter.use((err: unknown, _req: unknown, res: import("express").Response, next: import("express").NextFunction) => {
   if (err instanceof InsufficientFundsError) return res.status(400).json({ error: err.message });
   next(err);

@@ -33,61 +33,87 @@ const BoardGamesGame = (() => {
   let currentRoom    = null;   // room state object while in a room
   let myUserId       = null;
   let modalOpen      = false;
+  let _gameRunning   = false;  // true once we have called launchGameRenderer for the current room
+
+  // ─── Normalize room data from backend ────────────────────────────────────
+  // Backend uses `game` and `betChips`; frontend uses `gameId` and `bet`.
+  function normalizeRoom(r) {
+    if (!r) return r;
+    r.gameId    = r.gameId    ?? r.game;
+    r.bet       = r.bet       ?? r.betChips;
+    r.players   = r.players   ?? Array.from({ length: r.playerCount || 0 }, () => ({}));
+    return r;
+  }
 
   // ─── Socket bootstrap ─────────────────────────────────────────────────────
-  function initSocket() {
+  function initSocket(accountState) {
     if (socket) return;
-    socket = io("/boardgames", { auth: { token: Auth.getToken() } });
+    socket = io("/boardgames", { auth: { token: Api.getToken() } });
+
+    // Get userId from accountState (backend doesn't emit bg:me)
+    if (accountState && accountState.id) myUserId = accountState.id;
 
     socket.on("connect_error", (err) => {
-      showToast("Board games connection failed: " + err.message, "error");
+      UI.toast("Board games connection failed: " + err.message, "loss");
     });
 
-    socket.on("bg:me", (data) => {
-      myUserId = data.userId;
-    });
-
-    socket.on("bg:rooms", (rooms) => {
-      openRooms = rooms || [];
+    // bg:rooms — backend sends { rooms: [...] }
+    socket.on("bg:rooms", (payload) => {
+      const list = (payload && payload.rooms) ? payload.rooms : (Array.isArray(payload) ? payload : []);
+      openRooms = list.map(normalizeRoom);
       if (!currentRoom) renderLobby();
     });
 
+    // bg:room-update — sent to every player after any room change
     socket.on("bg:room-update", (roomState) => {
-      currentRoom = roomState;
-      if (roomState.status === "playing") {
-        launchGameRenderer(roomState);
+      currentRoom = normalizeRoom(roomState);
+      if (currentRoom.status === "playing") {
+        if (!_gameRunning) {
+          _gameRunning = true;
+          launchGameRenderer(currentRoom);
+        }
+        // else: the individual game renderer handles its own bg:room-update
       } else {
-        renderWaitingRoom(roomState);
+        _gameRunning = false;
+        renderWaitingRoom(currentRoom);
       }
     });
 
-    socket.on("bg:game-over", (data) => {
-      showGameOver(data);
-    });
-
-    socket.on("bg:error", (msg) => {
-      showToast(typeof msg === "string" ? msg : (msg.message || "Board game error"), "error");
-    });
-
-    socket.on("bg:joined", (roomState) => {
+    // bg:create — sent only to the creator; treat as "you joined"
+    socket.on("bg:create", (data) => {
+      const roomState = normalizeRoom(data && data.room ? data.room : data);
       currentRoom = roomState;
       renderWaitingRoom(roomState);
     });
 
+    // bg:game-over — backend sends { winner (username string), prize (cents) }
+    socket.on("bg:game-over", (data) => {
+      const normalized = {
+        winnerId:   null,
+        winnerIds:  null,
+        message:    data.winner ? `${data.winner} wins!` : "It's a draw!",
+        payout:     data.prize ? Math.floor(data.prize / 100) : 0,
+      };
+      showGameOver(normalized);
+    });
+
+    socket.on("bg:error", (msg) => {
+      UI.toast(typeof msg === "string" ? msg : (msg.message || "Board game error"), "loss");
+    });
+
     socket.on("bg:chips-update", (chips) => {
-      if (typeof updateBalance === "function") updateBalance(chips);
+      UI.setBalance(chips * 100);
     });
   }
 
   // ─── Main render entry ────────────────────────────────────────────────────
-  function render(container) {
+  function render(container, accountState) {
     _container = container;
     injectStyles();
-    initSocket();
+    initSocket(accountState);
 
-    // Request current user identity and room list
-    socket.emit("bg:get-me");
-    socket.emit("bg:get-rooms");
+    // Request room list from backend
+    socket.emit("bg:rooms");
 
     renderLobby();
   }
@@ -226,11 +252,11 @@ const BoardGamesGame = (() => {
       const maxPlayers = parseInt(overlay.querySelector("#bg-maxp-input").value, 10);
 
       if (!bet || bet < 1) {
-        showToast("Bet must be at least 1 chip", "error");
+        UI.toast("Bet must be at least 1 chip", "loss");
         return;
       }
       if (game.minP !== game.maxP && (maxPlayers < game.minP || maxPlayers > game.maxP)) {
-        showToast(`Max players must be between ${game.minP} and ${game.maxP}`, "error");
+        UI.toast(`Max players must be between ${game.minP} and ${game.maxP}`, "loss");
         return;
       }
 
@@ -241,23 +267,26 @@ const BoardGamesGame = (() => {
 
   // ─── Socket actions ────────────────────────────────────────────────────────
   function createRoom(gameId, bet, maxPlayers) {
-    socket.emit("bg:create-room", { gameId, bet, maxPlayers });
+    // Backend expects: { game, betChips, maxPlayers }
+    socket.emit("bg:create", { game: gameId, betChips: bet, maxPlayers });
   }
 
   function joinRoom(roomId) {
-    socket.emit("bg:join-room", { roomId });
+    socket.emit("bg:join", { roomId });
   }
 
   function setReady() {
-    if (currentRoom) socket.emit("bg:ready", { roomId: currentRoom.id });
+    // Backend reads currentRoomId from socket state — no params needed
+    socket.emit("bg:ready");
   }
 
   function leaveRoom() {
     if (currentRoom) {
-      socket.emit("bg:leave-room", { roomId: currentRoom.id });
+      socket.emit("bg:leave");
       currentRoom = null;
     }
-    socket.emit("bg:get-rooms");
+    _gameRunning = false;
+    socket.emit("bg:rooms");
     renderLobby();
     attachLobbyListeners();
   }
@@ -359,7 +388,8 @@ const BoardGamesGame = (() => {
     banner.querySelector(".bg-gameover__lobby-btn").addEventListener("click", () => {
       banner.remove();
       currentRoom = null;
-      socket.emit("bg:get-rooms");
+      _gameRunning = false;
+      socket.emit("bg:rooms");
       renderLobby();
       attachLobbyListeners();
     });
@@ -371,6 +401,157 @@ const BoardGamesGame = (() => {
     const style = document.createElement("style");
     style.id = "bg-styles";
     style.textContent = `
+      /* ── Casino board game theme ─────────────────────────────────────────── */
+
+      /* Shared felt table surface */
+      .bg-casino-table {
+        background: radial-gradient(ellipse at center, #1a6b3a 0%, #0d4a27 60%, #083318 100%);
+        border: 8px solid #5c3a1e;
+        border-radius: 16px;
+        box-shadow:
+          inset 0 0 40px rgba(0,0,0,0.4),
+          0 8px 32px rgba(0,0,0,0.6),
+          0 0 0 2px #3d2510;
+        position: relative;
+      }
+
+      /* Casino card styling */
+      .bg-card {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 76px;
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.12s, box-shadow 0.12s;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .bg-card:hover { transform: translateY(-6px) scale(1.05); box-shadow: 2px 8px 16px rgba(0,0,0,0.4); }
+      .bg-card.red  { color: #d32f2f; }
+      .bg-card.black { color: #1a1a1a; }
+      .bg-card.face-down {
+        background: repeating-linear-gradient(
+          45deg,
+          #1a237e,
+          #1a237e 5px,
+          #283593 5px,
+          #283593 10px
+        );
+        border: 2px solid #7986cb;
+        color: transparent;
+      }
+      .bg-card.face-down::after {
+        content: "🂠";
+        color: #9fa8da;
+        font-size: 2rem;
+        position: absolute;
+      }
+      .bg-card.playable { outline: 2px solid #4ade80; outline-offset: 2px; }
+      .bg-card.selected { outline: 3px solid #f0c244; transform: translateY(-10px); }
+
+      /* Suit colors */
+      .suit-S, .suit-C { color: #1a1a1a; }
+      .suit-H, .suit-D { color: #d32f2f; }
+
+      /* Casino poker chip display */
+      .bg-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        font-size: 0.65rem;
+        font-weight: 800;
+        border: 3px dashed rgba(255,255,255,0.5);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      }
+      .bg-chip-red    { background: #e53935; color: #fff; }
+      .bg-chip-blue   { background: #1e88e5; color: #fff; }
+      .bg-chip-green  { background: #43a047; color: #fff; }
+      .bg-chip-black  { background: #212121; color: #fff; }
+      .bg-chip-gold   { background: linear-gradient(135deg,#f9a825,#f57f17); color: #fff; }
+
+      /* Action button row */
+      .bg-action-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 0;
+      }
+      .bg-btn {
+        padding: 8px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: filter 0.15s, transform 0.1s;
+      }
+      .bg-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+      .bg-btn:active { transform: translateY(0); }
+      .bg-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+      .bg-btn-fold    { background: #e53935; color: #fff; }
+      .bg-btn-check   { background: #616161; color: #fff; }
+      .bg-btn-call    { background: #2e7d32; color: #fff; }
+      .bg-btn-raise   { background: #1565c0; color: #fff; }
+      .bg-btn-allin   { background: linear-gradient(135deg,#f9a825,#e65100); color: #fff; }
+      .bg-btn-roll    { background: linear-gradient(135deg,#7b1fa2,#4a148c); color: #fff; }
+      .bg-btn-buy     { background: #2e7d32; color: #fff; }
+      .bg-btn-end     { background: #37474f; color: #fff; }
+      .bg-btn-play    { background: linear-gradient(135deg,#1b5e20,#43a047); color: #fff; }
+      .bg-btn-draw    { background: #1565c0; color: #fff; }
+      .bg-btn-attack  { background: #b71c1c; color: #fff; }
+      .bg-btn-defend  { background: #1a237e; color: #fff; }
+      .bg-btn-take    { background: #4e342e; color: #fff; }
+      .bg-btn-done    { background: #546e7a; color: #fff; }
+
+      /* Status bar */
+      .bg-status-bar {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        color: #b0bec5;
+        text-align: center;
+      }
+      .bg-status-bar .highlight { color: #f0c244; font-weight: 700; }
+      .bg-status-bar .your-turn { color: #4ade80; font-weight: 700; }
+
+      /* Player badge */
+      .bg-player-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 20px;
+        padding: 4px 10px 4px 6px;
+        font-size: 0.82rem;
+        color: #cfd8dc;
+      }
+      .bg-player-badge.active-player { border-color: #4ade80; color: #fff; box-shadow: 0 0 10px rgba(74,222,128,0.3); }
+      .bg-player-badge .avatar { width: 22px; height: 22px; border-radius: 50%; background: #37474f; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+
+      /* Casino gold pot display */
+      .bg-pot {
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #f0c244;
+        text-shadow: 0 0 8px rgba(240,194,68,0.5);
+      }
+
       /* ── Lobby ─────────────────────────────────────────────── */
       .bg-lobby {
         padding: 1.5rem;

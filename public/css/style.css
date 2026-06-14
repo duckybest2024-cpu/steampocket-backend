@@ -601,3 +601,374 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
 @media (max-width: 700px) {
   .arcade-lobby-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); padding: 10px 14px 20px; }
 }
+
+/* When .game-panel wraps the new two-col layout, strip its own decoration */
+.game-panel:has(.game-layout) { padding: 0; background: transparent; border: none; }
+
+/* ── Two-column game layout ──────────────────────────────────── */
+.game-layout {
+  display: flex;
+  min-height: 540px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.bet-panel {
+  width: 245px;
+  min-width: 245px;
+  background: var(--bg-elev);
+  border-right: 1px solid var(--border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bp-tabs {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+.bp-tab {
+  flex: 1;
+  padding: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.bp-tab.active { background: var(--bg-card); color: var(--text); }
+
+.bp-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+.bp-input-row {
+  display: flex;
+  gap: 5px;
+  align-items: stretch;
+}
+.bp-input-row input { flex: 1; min-width: 0; }
+
+.quick-btn {
+  padding: 7px 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.quick-btn:hover { color: var(--text); border-color: var(--accent); }
+
+.bp-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+.play-btn {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #071a10;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: auto;
+  transition: filter 0.15s;
+}
+.play-btn:hover { filter: brightness(1.1); }
+.play-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+.play-btn.danger { background: linear-gradient(135deg, #f87171, #ef4444); color: #1a0707; }
+
+.game-canvas {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.stat-boxes { display: flex; gap: 8px; }
+.stat-box {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stat-box .sb-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
+.stat-box .sb-value { font-size: 1rem; font-weight: 700; color: var(--text); }
+
+.history-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.history-chip {
+  padding: 4px 9px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.history-chip.hc-low  { color: var(--loss); border-color: var(--loss); }
+.history-chip.hc-mid  { color: var(--gold); border-color: var(--gold); }
+.history-chip.hc-high { color: var(--win);  border-color: var(--win); }
+
+.mine-opts { display: flex; gap: 5px; flex-wrap: wrap; }
+.mine-opt {
+  flex: 1;
+  min-width: 36px;
+  padding: 7px 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: center;
+}
+.mine-opt.active, .mine-opt:hover { border-color: var(--accent); color: var(--text); }
+
+.range-track { height: 40px; border-radius: 20px; }
+.range-track-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+@media (max-width: 700px) {
+  .game-layout { flex-direction: column; min-height: unset; }
+  .bet-panel { width: auto; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); }
+  .game-canvas { padding: 14px; }
+}
+
+/* ── Engagement System ───────────────────────────────────────────────────── */
+#jackpot-ticker {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(240,194,68,0.12);
+  border: 1px solid rgba(240,194,68,0.35);
+  color: var(--gold); font-weight: 800; font-size: 0.85rem;
+  animation: ticker-pulse 2s ease-in-out infinite;
+  margin-right: 8px;
+}
+@keyframes ticker-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(240,194,68,0.4); }
+  50%      { box-shadow: 0 0 12px 4px rgba(240,194,68,0.2); }
+}
+
+.live-feed-panel {
+  position: fixed; bottom: 20px; right: 20px; z-index: 500;
+  display: flex; flex-direction: column; gap: 6px;
+  pointer-events: none; max-width: 280px;
+}
+.lf-item {
+  background: rgba(26,44,56,0.95); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+  font-size: 0.78rem; color: var(--text);
+  animation: lf-slide-in 0.3s ease; pointer-events: none;
+}
+@keyframes lf-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+.lf-item.win  { border-color: rgba(52,211,153,0.5); }
+.lf-item.loss { border-color: rgba(229,70,61,0.35); }
+
+.confetti-particle {
+  position: fixed; pointer-events: none; z-index: 9999;
+  border-radius: 2px;
+}
+
+@keyframes near-miss-flash {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+/* ── Casino Textures ──────────────────────────────────────────────────────── */
+.casino-felt {
+  background: url('/images/felt.jpg') center/cover;
+}
+.casino-felt-blue {
+  background: url('/images/felt-blue.jpg') center/cover;
+}
+.casino-wood {
+  background: url('/images/wood.jpg') center/cover;
+}
+.casino-marble {
+  background: url('/images/marble-dark.jpg') center/cover;
+}
+
+/* Blackjack / Baccarat table */
+.bj-area, .bacc-table {
+  background: url('/images/felt.jpg') center/cover;
+  border-radius: 16px;
+  border: 3px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.45);
+  padding: 20px;
+}
+
+/* Roulette board */
+.roulette-board-wrap {
+  background: url('/images/felt-blue.jpg') center/cover;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
+  padding: 14px;
+}
+
+/* Card back image for hidden cards */
+.card.hidden-card {
+  background: url('/images/card-back.png') center/cover !important;
+  color: transparent !important;
+}
+
+/* Chip icons — used in chip shop and balance display */
+.chip-icon-red    { background: url('/images/chip-red.svg')   center/contain no-repeat; }
+.chip-icon-blue   { background: url('/images/chip-blue.svg')  center/contain no-repeat; }
+.chip-icon-black  { background: url('/images/chip-black.svg') center/contain no-repeat; }
+.chip-icon-gold   { background: url('/images/chip-gold.svg')  center/contain no-repeat; }
+
+/* Dice images for dice game */
+.dice-face[data-face="1"] { background-image: url('/images/dice-1.png'); }
+.dice-face[data-face="2"] { background-image: url('/images/dice-2.png'); }
+.dice-face[data-face="3"] { background-image: url('/images/dice-3.png'); }
+.dice-face[data-face="4"] { background-image: url('/images/dice-4.png'); }
+.dice-face[data-face="5"] { background-image: url('/images/dice-5.png'); }
+.dice-face[data-face="6"] { background-image: url('/images/dice-6.png'); }
+.dice-face {
+  width: 64px; height: 64px;
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+
+/* Wood texture for poker/bridge tables */
+.poker-table-wrap {
+  background: url('/images/wood.jpg') center/cover;
+  border-radius: 16px;
+  border: 3px solid rgba(139,90,43,0.5);
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+  padding: 16px;
+}
+
+/* Auth / pending screen card on marble */
+.auth-card {
+  background: var(--bg-card);
+}
+
+/* ── Extended texture coverage ────────────────────────────────────────────── */
+
+/* Crash game canvas */
+.crash-stage, .crash-canvas-wrap {
+  background: url('/images/ocean.jpg') center/cover;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Mines grid background */
+.mines-grid-wrap, .mines-board {
+  background: url('/images/marble-dark.jpg') center/cover;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+/* Keno board */
+.keno-grid-wrap, .keno-board {
+  background: url('/images/felt-blue.jpg') center/cover;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+/* Slots frame */
+.slots-frame-wrap, .slots-machine {
+  background: url('/images/marble-dark.jpg') center/cover;
+  border-radius: 16px;
+  border: 3px solid rgba(255,255,255,0.12);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+}
+
+/* Plinko board area */
+.plinko-board-wrap {
+  background: url('/images/marble-dark.jpg') center/cover;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Tower game */
+.tower-wrap, .tower-grid {
+  background: url('/images/marble-dark.jpg') center/cover;
+  border-radius: 12px;
+}
+
+/* Chess board outer chrome */
+.chess-board-outer {
+  background: url('/images/wood.jpg') center/cover;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+/* Checkers board outer chrome */
+.ck-board-outer {
+  background: url('/images/wood.jpg') center/cover;
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+/* Monopoly outer board */
+.mono-board-outer {
+  background: url('/images/wood.jpg') center/cover;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+/* Bridge table */
+.bridge-table, .bridge-wrap {
+  background: url('/images/felt.jpg') center/cover;
+  border-radius: 12px;
+}
+
+/* Lobby hero */
+.lobby-hero, .lobby-banner {
+  background: url('/images/felt.jpg') center/cover;
+  border-radius: 16px;
+}
+
+/* NFT collection page */
+.nft-collection-wrap, .nft-grid-section {
+  background: url('/images/marble-light.jpg') center/cover;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Sidebar bottom balance area — subtle wood texture */
+.sidebar-footer {
+  background: url('/images/wood.jpg') center/cover;
+  background-size: cover;
+}

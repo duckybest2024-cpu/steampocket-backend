@@ -42,6 +42,91 @@ const DiceGame = (() => {
         </aside>
 
         <div class="game-canvas">
+
+          <div id="dice-3d-wrap" style="display:flex;justify-content:center;align-items:center;padding:20px 0 10px">
+            <div id="dice-3d" class="dice-3d">
+              <div class="dice-face dice-front">
+                <div class="dice-dot dc-c"></div>
+              </div>
+              <div class="dice-face dice-back">
+                <div class="dice-dot dc-tl"></div><div class="dice-dot dc-tr"></div>
+                <div class="dice-dot dc-bl"></div><div class="dice-dot dc-br"></div>
+                <div class="dice-dot dc-c"></div><div class="dice-dot dc-cr"></div>
+              </div>
+              <div class="dice-face dice-right">
+                <div class="dice-dot dc-tl"></div><div class="dice-dot dc-br"></div>
+              </div>
+              <div class="dice-face dice-left">
+                <div class="dice-dot dc-tl"></div><div class="dice-dot dc-tr"></div>
+                <div class="dice-dot dc-c"></div><div class="dice-dot dc-bl"></div>
+                <div class="dice-dot dc-br"></div>
+              </div>
+              <div class="dice-face dice-top">
+                <div class="dice-dot dc-tl"></div><div class="dice-dot dc-tr"></div>
+                <div class="dice-dot dc-bl"></div><div class="dice-dot dc-br"></div>
+              </div>
+              <div class="dice-face dice-bottom">
+                <div class="dice-dot dc-tl"></div><div class="dice-dot dc-tr"></div>
+                <div class="dice-dot dc-bl"></div>
+              </div>
+            </div>
+          </div>
+          <style>
+            .dice-3d-scene { perspective: 300px; }
+            .dice-3d {
+              width: 90px; height: 90px;
+              position: relative;
+              transform-style: preserve-3d;
+              transform: rotateX(-20deg) rotateY(30deg);
+              transition: transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+            }
+            .dice-3d.rolling {
+              animation: dice-tumble 0.6s ease-in-out;
+            }
+            @keyframes dice-tumble {
+              0%   { transform: rotateX(-20deg) rotateY(30deg); }
+              25%  { transform: rotateX(120deg) rotateY(200deg); }
+              50%  { transform: rotateX(240deg) rotateY(380deg); }
+              75%  { transform: rotateX(300deg) rotateY(500deg); }
+              100% { transform: rotateX(360deg) rotateY(720deg) rotateX(-20deg) rotateY(30deg); }
+            }
+            .dice-3d.win-state { transform: rotateX(-20deg) rotateY(30deg); filter: drop-shadow(0 0 16px #34d399); }
+            .dice-3d.loss-state { transform: rotateX(-20deg) rotateY(30deg); filter: drop-shadow(0 0 16px #ef4444); }
+            .dice-face {
+              position: absolute;
+              width: 90px; height: 90px;
+              background: linear-gradient(145deg, #1e3a5f, #0f2140);
+              border: 2px solid rgba(255,255,255,0.15);
+              border-radius: 14px;
+              display: grid;
+              grid-template-areas:
+                "tl . tr"
+                ". c ."
+                "bl . br";
+              padding: 10px;
+              box-sizing: border-box;
+              backface-visibility: hidden;
+            }
+            .dice-front  { transform: translateZ(45px); }
+            .dice-back   { transform: rotateY(180deg) translateZ(45px); }
+            .dice-right  { transform: rotateY(90deg) translateZ(45px); }
+            .dice-left   { transform: rotateY(-90deg) translateZ(45px); }
+            .dice-top    { transform: rotateX(90deg) translateZ(45px); }
+            .dice-bottom { transform: rotateX(-90deg) translateZ(45px); }
+            .dice-dot {
+              width: 14px; height: 14px;
+              background: radial-gradient(circle, #fff 30%, #c0deff 100%);
+              border-radius: 50%;
+              align-self: center;
+              justify-self: center;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            }
+            .dc-tl { grid-area: tl; } .dc-tr { grid-area: tr; }
+            .dc-bl { grid-area: bl; } .dc-br { grid-area: br; }
+            .dc-c  { grid-area: c;  }
+            .dc-cr { grid-column: 3; grid-row: 2; }
+          </style>
+
           <div class="roll-display"><span id="dice-roll-number" class="roll-number">--</span></div>
 
           <div class="range-track" id="dice-track" style="--split: 50%">
@@ -92,6 +177,7 @@ const DiceGame = (() => {
       betBtn: container.querySelector("#dice-bet"),
       result: container.querySelector("#dice-result"),
       fairness: container.querySelector("#dice-fairness"),
+      dice3d: container.querySelector("#dice-3d"),
     };
 
     function refreshOdds() {
@@ -147,6 +233,13 @@ const DiceGame = (() => {
       els.number.textContent = "…";
       els.number.className = "roll-number";
 
+      // Animate the 3D dice
+      if (els.dice3d) {
+        els.dice3d.classList.remove("win-state", "loss-state");
+        els.dice3d.classList.add("rolling");
+        setTimeout(() => els.dice3d.classList.remove("rolling"), 620);
+      }
+
       try {
         const res = await Api.post("/games/dice", { amount, target, direction });
         const rollValue = res.result.state.roll;
@@ -155,6 +248,12 @@ const DiceGame = (() => {
         els.marker.style.left = `${rollValue}%`;
         els.number.textContent = rollValue.toFixed(2);
         els.number.className = `roll-number ${isWin ? "win" : "loss"}`;
+
+        // Set dice win/loss glow
+        if (els.dice3d) {
+          els.dice3d.classList.remove("win-state", "loss-state");
+          els.dice3d.classList.add(isWin ? "win-state" : "loss-state");
+        }
 
         els.result.className = `result-banner show ${isWin ? "win" : "loss"}`;
         els.result.textContent = isWin

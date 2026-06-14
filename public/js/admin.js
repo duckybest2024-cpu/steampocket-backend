@@ -1,14 +1,36 @@
 const AdminGame = (() => {
   const RANK_INFO = {
-    bronze:   { label: "Bronze",   c: "#cd7f32" },
-    silver:   { label: "Silver",   c: "#c0c0c0" },
-    gold:     { label: "Gold",     c: "#ffd700" },
-    platinum: { label: "Platinum", c: "#b9f2ff" },
-    diamond:  { label: "Diamond",  c: "#00e5ff" },
-    owner:    { label: "👑 Owner", c: "#a855f7" },
+    newcomer:    { label: "Newcomer",     c: "#9ca3af" },
+    beginner:    { label: "Beginner",     c: "#6b7280" },
+    amateur:     { label: "Amateur",      c: "#78716c" },
+    apprentice:  { label: "Apprentice",   c: "#92400e" },
+    bronze:      { label: "Bronze",       c: "#cd7f32" },
+    silver:      { label: "Silver",       c: "#c0c0c0" },
+    gold:        { label: "Gold",         c: "#ffd700" },
+    platinum:    { label: "Platinum",     c: "#b9f2ff" },
+    diamond:     { label: "Diamond",      c: "#00e5ff" },
+    emerald:     { label: "Emerald",      c: "#10b981" },
+    sapphire:    { label: "Sapphire",     c: "#3b82f6" },
+    ruby:        { label: "Ruby",         c: "#ef4444" },
+    jade:        { label: "Jade",         c: "#06b6d4" },
+    crystal:     { label: "Crystal",      c: "#8b5cf6" },
+    elite:       { label: "Elite",        c: "#6366f1" },
+    master:      { label: "Master",       c: "#f59e0b" },
+    grandmaster: { label: "Grandmaster",  c: "#f97316" },
+    legend:      { label: "Legend",       c: "#ec4899" },
+    titan:       { label: "Titan",        c: "#a855f7" },
+    owner:       { label: "👑 Owner",     c: "#a855f7" },
   };
 
-  const RANK_OPTS = ["bronze","silver","gold","platinum","diamond"];
+  const PATREON_TIER_INFO = {
+    bronze_patron:   { label: "🥉 Bronze Patron",   c: "#cd7f32", price: "$1/mo" },
+    silver_patron:   { label: "🥈 Silver Patron",   c: "#c0c0c0", price: "$5/mo" },
+    gold_patron:     { label: "🥇 Gold Patron",     c: "#ffd700", price: "$10/mo" },
+    platinum_patron: { label: "💠 Platinum Patron", c: "#b9f2ff", price: "$25/mo" },
+    diamond_patron:  { label: "💎 Diamond Patron",  c: "#00e5ff", price: "$50/mo" },
+  };
+
+  const RANK_OPTS = ["newcomer","beginner","amateur","apprentice","bronze","silver","gold","platinum","diamond","emerald","sapphire","ruby","jade","crystal","elite","master","grandmaster","legend","titan"];
 
   const GAMES = ["dice","limbo","mines","plinko","crash","keno","hilo","blackjack","roulette","slots","baccarat","videopoker","wheel","coinflip"];
 
@@ -62,7 +84,7 @@ const AdminGame = (() => {
     badge: `display:inline-block;border-radius:6px;padding:2px 8px;font-size:0.72rem;font-weight:700;`,
   };
 
-  const TABS = ["stats","users","adjust","bets","players","broadcasts","promos","controls","nfts","bank","danger"];
+  const TABS = ["stats","users","adjust","bets","players","broadcasts","promos","controls","nfts","bank","danger","maintenance","config","ipblocks","reports","analytics","referrals","leaderboard","chatmod","scratch","prizes","subscriptions"];
 
   function money(cents) { return UI.money(cents); }
   function chips(cents) { return Math.floor(cents / 100).toLocaleString() + " 🪙"; }
@@ -234,7 +256,18 @@ const AdminGame = (() => {
             <button id="adm-tab-controls"   style="${tabStyle("controls")}">🔧 Controls</button>
             <button id="adm-tab-nfts"       style="${tabStyle("nfts")}">🖼️ NFTs</button>
             <button id="adm-tab-bank"       style="${tabStyle("bank")}">🏦 Bank</button>
-            <button id="adm-tab-danger"     style="${tabStyle("danger")}">⚠️ Danger</button>
+            <button id="adm-tab-danger"       style="${tabStyle("danger")}">⚠️ Danger</button>
+            <button id="adm-tab-maintenance"  style="${tabStyle("maintenance")}">🔒 Maintenance</button>
+            <button id="adm-tab-config"       style="${tabStyle("config")}">⚙️ Config</button>
+            <button id="adm-tab-ipblocks"     style="${tabStyle("ipblocks")}">🚫 IP Blocks</button>
+            <button id="adm-tab-reports"      style="${tabStyle("reports")}">🔍 Reports</button>
+            <button id="adm-tab-analytics"    style="${tabStyle("analytics")}">📈 Analytics</button>
+            <button id="adm-tab-referrals"    style="${tabStyle("referrals")}">🔗 Referrals</button>
+            <button id="adm-tab-leaderboard"  style="${tabStyle("leaderboard")}">🏆 Leaderboard</button>
+            <button id="adm-tab-chatmod"      style="${tabStyle("chatmod")}">💬 Chat Mod</button>
+            <button id="adm-tab-scratch"        style="${tabStyle("scratch")}">🎟️ Scratch</button>
+            <button id="adm-tab-prizes"         style="${tabStyle("prizes")}">🎁 Prizes</button>
+            <button id="adm-tab-subscriptions"  style="${tabStyle("subscriptions")}">🔑 Subscriptions</button>
           </div>
           ${TABS.map(t => `<div id="adm-pane-${t}" style="${t === "stats" ? "" : "display:none;"}"></div>`).join("")}
         </div>
@@ -247,6 +280,7 @@ const AdminGame = (() => {
 
       buildAdjustPane();
       buildDangerPane();
+      buildConfigPane();
       switchTab("stats", true);
     }
 
@@ -273,6 +307,17 @@ const AdminGame = (() => {
       if (key === "controls") loadControls();
       if (key === "nfts") loadNfts();
       if (key === "bank") loadBank();
+      if (key === "maintenance") loadMaintenance();
+      if (key === "config") loadConfig();
+      if (key === "ipblocks") loadIpBlocks();
+      if (key === "reports") loadReports();
+      if (key === "analytics") loadAnalytics();
+      if (key === "referrals") loadReferrals();
+      if (key === "leaderboard") loadLeaderboard();
+      if (key === "chatmod") loadChatMod();
+      if (key === "scratch") loadScratch();
+      if (key === "prizes") loadPrizes();
+      if (key === "subscriptions") loadSubscriptions();
     }
 
     // ── Stats ──────────────────────────────────────────────────────────────────
@@ -408,7 +453,7 @@ const AdminGame = (() => {
           tableBody.innerHTML = `<tr><td colspan="9" style="padding:30px;text-align:center;color:var(--text-dim);">No users found.</td></tr>`;
         } else {
           tableBody.innerHTML = users.map((u) => {
-            const isOwnerUser = (u.username || "").toLowerCase() === "ditol21";
+            const isOwnerUser = (u.rank || "") === "owner";
             const rankSelectHtml = isOwnerUser
               ? `<span style="color:var(--accent-2);font-weight:700;font-size:0.8rem;">👑 Owner</span>`
               : `<select class="adm-rank-select" data-id="${u.id}" style="${S.rankSelect}">
@@ -1478,6 +1523,810 @@ const AdminGame = (() => {
           confirmBtn.disabled = false; confirmBtn.textContent = "🗑️ Permanently Delete Account";
         }
       });
+    }
+
+    // ── Maintenance Mode ───────────────────────────────────────────────────────
+    async function loadMaintenance() {
+      const pane = container.querySelector("#adm-pane-maintenance");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/maintenance");
+        const on = data.enabled;
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">🔒 Maintenance Mode</h3>
+            <p style="color:var(--text-dim);font-size:0.85rem;margin:0 0 18px;">
+              When enabled, non-admin visitors see a maintenance page instead of the site.
+            </p>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+              <span style="font-size:1.1rem;font-weight:800;color:${on ? "var(--win)" : "var(--loss)"};">
+                Status: ${on ? "🟢 ACTIVE" : "🔴 INACTIVE"}
+              </span>
+            </div>
+            <button id="adm-maint-toggle" style="${on ? S.toggleOn : S.toggleOff}">
+              ${on ? "Disable Maintenance Mode" : "Enable Maintenance Mode"}
+            </button>
+            <div id="adm-maint-result" style="display:none;${S.resultBox};margin-top:14px;"></div>
+          </div>
+        `;
+        pane.querySelector("#adm-maint-toggle").addEventListener("click", async (e) => {
+          const btn = e.currentTarget;
+          btn.disabled = true; btn.textContent = "Saving…";
+          try {
+            await Api.post("/admin/maintenance/toggle", {});
+            loadMaintenance();
+          } catch (err) {
+            const r = pane.querySelector("#adm-maint-result");
+            r.style.display = "block"; r.style.color = "var(--loss)"; r.textContent = err.message;
+            btn.disabled = false;
+          }
+        });
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Site Config ────────────────────────────────────────────────────────────
+    function buildConfigPane() {
+      // Will be loaded on demand via loadConfig
+    }
+
+    async function loadConfig() {
+      const pane = container.querySelector("#adm-pane-config");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const cfg = await Api.get("/admin/config");
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">⚙️ Site Config</h3>
+            <div style="${S.form}">
+              <div style="${S.formGroup}">
+                <label style="${S.formLabel}" for="adm-cfg-minbet">Min Bet (chips)</label>
+                <input id="adm-cfg-minbet" type="number" min="0" value="${cfg.minBet}" style="${S.formInput}" />
+              </div>
+              <div style="${S.formGroup}">
+                <label style="${S.formLabel}" for="adm-cfg-maxbet">Max Bet (chips)</label>
+                <input id="adm-cfg-maxbet" type="number" min="0" value="${cfg.maxBet}" style="${S.formInput}" />
+              </div>
+              <div style="${S.formGroup}">
+                <label style="${S.formLabel}" for="adm-cfg-edge">House Edge % Override (leave blank to use default)</label>
+                <input id="adm-cfg-edge" type="number" min="0" max="100" step="0.01"
+                  value="${cfg.houseEdgeOverride !== null ? cfg.houseEdgeOverride : ""}"
+                  placeholder="e.g. 2.5" style="${S.formInput}" />
+              </div>
+              <div>
+                <button id="adm-cfg-save" style="${S.submitBtn}">Save Config</button>
+              </div>
+              <div id="adm-cfg-result" style="display:none;${S.resultBox}"></div>
+            </div>
+          </div>
+        `;
+        pane.querySelector("#adm-cfg-save").addEventListener("click", async () => {
+          const btn = pane.querySelector("#adm-cfg-save");
+          const r = pane.querySelector("#adm-cfg-result");
+          const minBet = Number(pane.querySelector("#adm-cfg-minbet").value);
+          const maxBet = Number(pane.querySelector("#adm-cfg-maxbet").value);
+          const edgeRaw = pane.querySelector("#adm-cfg-edge").value.trim();
+          const houseEdgeOverride = edgeRaw === "" ? null : Number(edgeRaw);
+          btn.disabled = true; btn.textContent = "Saving…";
+          try {
+            await Api.post("/admin/config", { minBet, maxBet, houseEdgeOverride });
+            r.style.display = "block"; r.style.color = "var(--win)"; r.textContent = "✅ Config saved.";
+            UI.toast("Config saved.", "info");
+          } catch (err) {
+            r.style.display = "block"; r.style.color = "var(--loss)"; r.textContent = err.message;
+          } finally {
+            btn.disabled = false; btn.textContent = "Save Config";
+          }
+        });
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── IP Blocks ──────────────────────────────────────────────────────────────
+    async function loadIpBlocks() {
+      const pane = container.querySelector("#adm-pane-ipblocks");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/ip-blocks");
+        const blocks = data.blocks || [];
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">🚫 IP Blocklist (${blocks.length})</h3>
+            <div style="${S.tableWrap};margin-bottom:20px;">
+              <table style="${S.table}">
+                <thead><tr>
+                  <th style="${S.th}">IP Address</th>
+                  <th style="${S.th}">Reason</th>
+                  <th style="${S.th}">Added At</th>
+                  <th style="${S.th}">Action</th>
+                </tr></thead>
+                <tbody id="adm-ip-tbody">
+                  ${blocks.length === 0
+                    ? `<tr><td colspan="4" style="${S.td};color:var(--text-dim);text-align:center;">No blocked IPs</td></tr>`
+                    : blocks.map(b => `
+                      <tr>
+                        <td style="${S.td};font-family:monospace;">${b.ip}</td>
+                        <td style="${S.td};color:var(--text-dim);">${b.reason || "—"}</td>
+                        <td style="${S.td};color:var(--text-dim);">${fmtDate(b.addedAt)}</td>
+                        <td style="${S.td};">
+                          <button class="adm-ip-remove-btn" data-ip="${b.ip}" style="${S.redBtn}">Remove</button>
+                        </td>
+                      </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:18px;">
+              <h4 style="margin:0 0 12px;font-size:0.88rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Block New IP</h4>
+              <div style="${S.form}">
+                <div style="${S.formGroup}">
+                  <label style="${S.formLabel}" for="adm-ip-addr">IP Address</label>
+                  <input id="adm-ip-addr" type="text" placeholder="e.g. 1.2.3.4" style="${S.formInput}" />
+                </div>
+                <div style="${S.formGroup}">
+                  <label style="${S.formLabel}" for="adm-ip-reason">Reason (optional)</label>
+                  <input id="adm-ip-reason" type="text" placeholder="e.g. Spam / abuse" style="${S.formInput}" />
+                </div>
+                <div>
+                  <button id="adm-ip-add-btn" style="${S.submitBtn}">Block IP</button>
+                </div>
+                <div id="adm-ip-result" style="display:none;${S.resultBox}"></div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        pane.querySelectorAll(".adm-ip-remove-btn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const ip = btn.getAttribute("data-ip");
+            if (!confirm(`Remove block for ${ip}?`)) return;
+            btn.disabled = true;
+            try {
+              await fetch(`/admin/ip-blocks/${encodeURIComponent(ip)}`, {
+                method: "DELETE",
+                headers: { authorization: `Bearer ${Api.getToken()}` },
+              });
+              loadIpBlocks();
+            } catch (err) { UI.toast(err.message, "loss"); btn.disabled = false; }
+          });
+        });
+
+        pane.querySelector("#adm-ip-add-btn").addEventListener("click", async () => {
+          const btn = pane.querySelector("#adm-ip-add-btn");
+          const r = pane.querySelector("#adm-ip-result");
+          const ip = pane.querySelector("#adm-ip-addr").value.trim();
+          const reason = pane.querySelector("#adm-ip-reason").value.trim();
+          if (!ip) { UI.toast("Enter an IP address.", "loss"); return; }
+          btn.disabled = true; btn.textContent = "Blocking…";
+          try {
+            await Api.post("/admin/ip-blocks", { ip, reason });
+            loadIpBlocks();
+          } catch (err) {
+            r.style.display = "block"; r.style.color = "var(--loss)"; r.textContent = err.message;
+            btn.disabled = false; btn.textContent = "Block IP";
+          }
+        });
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Reports ────────────────────────────────────────────────────────────────
+    async function loadReports() {
+      const pane = container.querySelector("#adm-pane-reports");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/reports/suspicious");
+        const users = data.users || [];
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">🔍 Suspicious Users — Balance > 0, No Deposits (${users.length})</h3>
+            <p style="color:var(--text-dim);font-size:0.82rem;margin:0 0 14px;">
+              Users with a positive balance and active bets but no confirmed deposit transactions.
+            </p>
+            <div style="${S.tableWrap}">
+              <table style="${S.table}">
+                <thead><tr>
+                  <th style="${S.th}">Username</th>
+                  <th style="${S.th}">Balance</th>
+                  <th style="${S.th}">Bets</th>
+                  <th style="${S.th}">Total Wagered</th>
+                </tr></thead>
+                <tbody>
+                  ${users.length === 0
+                    ? `<tr><td colspan="4" style="${S.td};color:var(--text-dim);text-align:center;">No suspicious users found</td></tr>`
+                    : users.map(u => `
+                      <tr>
+                        <td style="${S.td}"><span style="${S.usernameLink}" data-uid="${u.id}">${u.username}</span></td>
+                        <td style="${S.td}">${chips(u.balance || 0)}</td>
+                        <td style="${S.td}">${(u.betCount || 0).toLocaleString()}</td>
+                        <td style="${S.td}">${chips(u.totalWagered || 0)}</td>
+                      </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        pane.querySelectorAll("[data-uid]").forEach(el => {
+          el.addEventListener("click", () => openUserDetailModal(el.getAttribute("data-uid")));
+        });
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Analytics ──────────────────────────────────────────────────────────────
+    async function loadAnalytics() {
+      const pane = container.querySelector("#adm-pane-analytics");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/analytics");
+        const { dailySignups = [], betsPerGame = [], winLossRatio = "0.0", totalBets = 0 } = data;
+
+        const maxSignups = Math.max(1, ...dailySignups.map(d => d.count));
+        const maxBetsGame = Math.max(1, ...betsPerGame.map(g => g.count));
+
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">📈 Analytics</h3>
+            <div style="${S.statsGrid};margin-bottom:18px;">
+              <div style="${S.statBox}"><div style="${S.sbLabel}">Total Bets</div><div style="${S.sbValue}">${totalBets.toLocaleString()}</div></div>
+              <div style="${S.statBox}"><div style="${S.sbLabel}">Win Rate</div><div style="${S.sbValue}">${winLossRatio}%</div></div>
+            </div>
+
+            <h4 style="margin:0 0 10px;font-size:0.82rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Daily Signups — Last 7 Days</h4>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:80px;margin-bottom:20px;">
+              ${dailySignups.map(d => {
+                const h = Math.max(4, Math.round((d.count / maxSignups) * 72));
+                return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+                  <span style="font-size:0.65rem;color:var(--text-dim);">${d.count}</span>
+                  <div style="width:100%;height:${h}px;background:var(--accent);border-radius:4px 4px 0 0;opacity:0.85;"></div>
+                  <span style="font-size:0.6rem;color:var(--text-dim);">${d.date.slice(5)}</span>
+                </div>`;
+              }).join("")}
+            </div>
+
+            <h4 style="margin:0 0 10px;font-size:0.82rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Bets by Game</h4>
+            <div style="${S.tableWrap}">
+              <table style="${S.table}">
+                <thead><tr>
+                  <th style="${S.th}">Game</th>
+                  <th style="${S.th}">Bet Count</th>
+                  <th style="${S.th}">Total Wagered</th>
+                  <th style="${S.th}">Total Paid Out</th>
+                  <th style="${S.th}">Bar</th>
+                </tr></thead>
+                <tbody>
+                  ${betsPerGame.slice(0, 20).map(g => `
+                    <tr>
+                      <td style="${S.td};font-weight:700;">${g.game}</td>
+                      <td style="${S.td}">${g.count.toLocaleString()}</td>
+                      <td style="${S.td}">${chips(g.wagered || 0)}</td>
+                      <td style="${S.td}">${chips(g.paidOut || 0)}</td>
+                      <td style="${S.td};min-width:80px;">
+                        <div style="width:${Math.round((g.count/maxBetsGame)*100)}%;min-width:4px;height:8px;background:var(--accent);border-radius:4px;opacity:0.8;"></div>
+                      </td>
+                    </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Referrals ──────────────────────────────────────────────────────────────
+    async function loadReferrals() {
+      const pane = container.querySelector("#adm-pane-referrals");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/referrals");
+        const refs = data.referrals || [];
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">🔗 Referral Codes (${refs.length} users)</h3>
+            <p style="color:var(--text-dim);font-size:0.82rem;margin:0 0 14px;">
+              Each user has an auto-generated referral code. Referred users who register with a code earn the referrer 50 chips.
+            </p>
+            <div style="${S.tableWrap}">
+              <table style="${S.table}">
+                <thead><tr>
+                  <th style="${S.th}">Username</th>
+                  <th style="${S.th}">Referral Code</th>
+                  <th style="${S.th}">Referred</th>
+                  <th style="${S.th}">Bonus Earned</th>
+                </tr></thead>
+                <tbody>
+                  ${refs.length === 0
+                    ? `<tr><td colspan="4" style="${S.td};color:var(--text-dim);text-align:center;">No users found</td></tr>`
+                    : refs.map(r => `
+                      <tr>
+                        <td style="${S.td};font-weight:700;">${r.username}</td>
+                        <td style="${S.td};font-family:monospace;color:var(--accent-2);">${r.referralCode}</td>
+                        <td style="${S.td}">${r.referredCount}</td>
+                        <td style="${S.td}">${chips(r.bonusEarned * 100)}</td>
+                      </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Leaderboard ────────────────────────────────────────────────────────────
+    async function loadLeaderboard() {
+      const pane = container.querySelector("#adm-pane-leaderboard");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/leaderboard");
+        const users = data.users || [];
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">🏆 Top Players by Total Wagered</h3>
+            <div style="${S.tableWrap};margin-bottom:20px;">
+              <table style="${S.table}">
+                <thead><tr>
+                  <th style="${S.th}">#</th>
+                  <th style="${S.th}">Username</th>
+                  <th style="${S.th}">Balance</th>
+                  <th style="${S.th}">XP</th>
+                  <th style="${S.th}">Total Wagered</th>
+                </tr></thead>
+                <tbody>
+                  ${users.length === 0
+                    ? `<tr><td colspan="5" style="${S.td};color:var(--text-dim);text-align:center;">No players found</td></tr>`
+                    : users.map((u, i) => `
+                      <tr>
+                        <td style="${S.td};color:var(--text-dim);">${i + 1}</td>
+                        <td style="${S.td}"><span style="${S.usernameLink}" data-uid="${u.id}">${u.username}</span></td>
+                        <td style="${S.td}">${chips(u.balance || 0)}</td>
+                        <td style="${S.td}">${(u.xp || 0).toLocaleString()}</td>
+                        <td style="${S.td}">${chips(u.totalWagered || 0)}</td>
+                      </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:16px;">
+              <button id="adm-lb-reset" style="${S.deleteBtn}">⚠️ Reset All XP to 0</button>
+              <div id="adm-lb-result" style="display:none;${S.resultBox};margin-top:14px;"></div>
+            </div>
+          </div>
+        `;
+        pane.querySelectorAll("[data-uid]").forEach(el => {
+          el.addEventListener("click", () => openUserDetailModal(el.getAttribute("data-uid")));
+        });
+        pane.querySelector("#adm-lb-reset").addEventListener("click", async () => {
+          if (!confirm("Reset XP for ALL users to 0? This cannot be undone.")) return;
+          const btn = pane.querySelector("#adm-lb-reset");
+          const r = pane.querySelector("#adm-lb-result");
+          btn.disabled = true; btn.textContent = "Resetting…";
+          try {
+            await Api.post("/admin/leaderboard/reset", {});
+            r.style.display = "block"; r.style.color = "var(--win)"; r.textContent = "✅ XP reset for all users.";
+            UI.toast("XP reset.", "info");
+            loadLeaderboard();
+          } catch (err) {
+            r.style.display = "block"; r.style.color = "var(--loss)"; r.textContent = err.message;
+            btn.disabled = false; btn.textContent = "⚠️ Reset All XP to 0";
+          }
+        });
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Chat Moderation ────────────────────────────────────────────────────────
+    async function loadChatMod() {
+      const pane = container.querySelector("#adm-pane-chatmod");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/chat/messages");
+        const muted = data.mutedUsers || [];
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">💬 Chat Moderation</h3>
+            <p style="color:var(--text-dim);font-size:0.85rem;margin:0 0 18px;">
+              Recent chat messages will appear here — chat is stored in memory per session and resets on server restart.
+            </p>
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;min-height:80px;margin-bottom:20px;color:var(--text-dim);font-size:0.85rem;font-style:italic;">
+              No chat messages available (chat is in-memory, no history is persisted).
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:16px;">
+              <h4 style="margin:0 0 12px;font-size:0.88rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Mute / Unmute User</h4>
+              <div style="${S.form}">
+                <div style="${S.formGroup}">
+                  <label style="${S.formLabel}" for="adm-chat-user">Username</label>
+                  <input id="adm-chat-user" type="text" placeholder="Enter username…" style="${S.formInput}" />
+                </div>
+                <div style="display:flex;gap:10px;">
+                  <button id="adm-chat-mute-btn" style="${S.submitBtn}">Mute User</button>
+                  <button id="adm-chat-unmute-btn" style="${S.smallBtn}">Unmute User</button>
+                </div>
+                <div id="adm-chat-result" style="display:none;${S.resultBox}"></div>
+              </div>
+            </div>
+            <div style="margin-top:18px;">
+              <h4 style="margin:0 0 10px;font-size:0.88rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">
+                Currently Muted (${muted.length})
+              </h4>
+              ${muted.length === 0
+                ? `<p style="color:var(--text-dim);font-size:0.85rem;">No users currently muted.</p>`
+                : `<div style="display:flex;flex-wrap:wrap;gap:8px;">${muted.map(u =>
+                    `<span style="background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.35);color:var(--loss);border-radius:7px;padding:4px 10px;font-size:0.8rem;font-weight:700;">${u}</span>`
+                  ).join("")}</div>`}
+            </div>
+          </div>
+        `;
+        const r = pane.querySelector("#adm-chat-result");
+        pane.querySelector("#adm-chat-mute-btn").addEventListener("click", async () => {
+          const username = pane.querySelector("#adm-chat-user").value.trim();
+          if (!username) { UI.toast("Enter a username.", "loss"); return; }
+          try {
+            await Api.post("/admin/chat/mute", { username });
+            r.style.display = "block"; r.style.color = "var(--win)"; r.textContent = `✅ ${username} muted.`;
+            loadChatMod();
+          } catch (err) { r.style.display = "block"; r.style.color = "var(--loss)"; r.textContent = err.message; }
+        });
+        pane.querySelector("#adm-chat-unmute-btn").addEventListener("click", async () => {
+          const username = pane.querySelector("#adm-chat-user").value.trim();
+          if (!username) { UI.toast("Enter a username.", "loss"); return; }
+          try {
+            await Api.post("/admin/chat/unmute", { username });
+            r.style.display = "block"; r.style.color = "var(--win)"; r.textContent = `✅ ${username} unmuted.`;
+            loadChatMod();
+          } catch (err) { r.style.display = "block"; r.style.color = "var(--loss)"; r.textContent = err.message; }
+        });
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Scratch Tickets ────────────────────────────────────────────────────────
+    async function loadScratch() {
+      const pane = container.querySelector("#adm-pane-scratch");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/scratch/stats");
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">🎟️ Scratch Ticket Stats</h3>
+            <div style="${S.statsGrid}">
+              <div style="${S.statBox}">
+                <div style="${S.sbLabel}">Tickets Sold</div>
+                <div style="${S.sbValue}">${(data.totalSold || 0).toLocaleString()}</div>
+              </div>
+              <div style="${S.statBox}">
+                <div style="${S.sbLabel}">Total Wagered</div>
+                <div style="${S.sbValue}">${chips(data.totalWagered || 0)}</div>
+              </div>
+              <div style="${S.statBox}">
+                <div style="${S.sbLabel}">Total Won (Payouts)</div>
+                <div style="${S.sbValue}">${chips(data.totalPaidOut || 0)}</div>
+              </div>
+              <div style="${S.statBox}">
+                <div style="${S.sbLabel}">Net Revenue</div>
+                <div style="${S.sbValue};color:${(data.revenue || 0) >= 0 ? "var(--win)" : "var(--loss)"};">
+                  ${chips(data.revenue || 0)}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Prize Draws ────────────────────────────────────────────────────────────
+    async function loadPrizes() {
+      const pane = container.querySelector("#adm-pane-prizes");
+      if (!pane) return;
+      pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading…</div>`;
+      try {
+        const data = await Api.get("/admin/prizes");
+        const prizes = data.prizes || [];
+        pane.innerHTML = `
+          <div style="${S.sectionCard}">
+            <h3 style="${S.sectionTitle}">🎁 Prize Draws (${prizes.length})</h3>
+            <div style="${S.tableWrap};margin-bottom:20px;">
+              <table style="${S.table}">
+                <thead><tr>
+                  <th style="${S.th}">Name</th>
+                  <th style="${S.th}">Prize (chips)</th>
+                  <th style="${S.th}">Created</th>
+                  <th style="${S.th}">Winner</th>
+                  <th style="${S.th}">Action</th>
+                </tr></thead>
+                <tbody>
+                  ${prizes.length === 0
+                    ? `<tr><td colspan="5" style="${S.td};color:var(--text-dim);text-align:center;">No prizes created yet</td></tr>`
+                    : prizes.map(p => `
+                      <tr>
+                        <td style="${S.td};font-weight:700;">${p.name}</td>
+                        <td style="${S.td}">${chips(p.chipAmount * 100)}</td>
+                        <td style="${S.td};color:var(--text-dim);">${fmtDate(p.createdAt)}</td>
+                        <td style="${S.td};">
+                          ${p.winner
+                            ? `<span style="color:var(--win);font-weight:700;">🏆 ${p.winner.username}</span><br><span style="color:var(--text-dim);font-size:0.75rem;">${fmtDate(p.drawnAt)}</span>`
+                            : `<span style="color:var(--text-dim);">—</span>`}
+                        </td>
+                        <td style="${S.td};">
+                          ${p.winner
+                            ? `<span style="color:var(--text-dim);font-size:0.78rem;">Drawn</span>`
+                            : `<button class="adm-prize-draw-btn" data-id="${p.id}" data-name="${p.name}" style="${S.greenBtn}">🎲 Draw Winner</button>`}
+                        </td>
+                      </tr>`).join("")}
+                </tbody>
+              </table>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:18px;">
+              <h4 style="margin:0 0 12px;font-size:0.88rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Create New Prize</h4>
+              <div style="${S.form}">
+                <div style="${S.formGroup}">
+                  <label style="${S.formLabel}" for="adm-prize-name">Prize Name</label>
+                  <input id="adm-prize-name" type="text" placeholder="e.g. Weekend Jackpot" style="${S.formInput}" />
+                </div>
+                <div style="${S.formGroup}">
+                  <label style="${S.formLabel}" for="adm-prize-chips">Chip Amount</label>
+                  <input id="adm-prize-chips" type="number" min="0" placeholder="e.g. 1000" style="${S.formInput}" />
+                </div>
+                <div>
+                  <button id="adm-prize-create-btn" style="${S.submitBtn}">Create Prize</button>
+                </div>
+                <div id="adm-prize-result" style="display:none;${S.resultBox}"></div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        pane.querySelectorAll(".adm-prize-draw-btn").forEach(btn => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-id");
+            const name = btn.getAttribute("data-name");
+            if (!confirm(`Draw a random winner for "${name}"? The winner will receive the chips immediately.`)) return;
+            btn.disabled = true; btn.textContent = "Drawing…";
+            try {
+              const result = await Api.post(`/admin/prizes/${id}/draw`, {});
+              UI.toast(`🏆 Winner: ${result.prize.winner.username}!`, "info");
+              loadPrizes();
+            } catch (err) {
+              UI.toast(err.message, "loss");
+              btn.disabled = false; btn.textContent = "🎲 Draw Winner";
+            }
+          });
+        });
+
+        const r = pane.querySelector("#adm-prize-result");
+        pane.querySelector("#adm-prize-create-btn").addEventListener("click", async () => {
+          const btn = pane.querySelector("#adm-prize-create-btn");
+          const name = pane.querySelector("#adm-prize-name").value.trim();
+          const chipAmount = Number(pane.querySelector("#adm-prize-chips").value);
+          if (!name) { UI.toast("Enter a prize name.", "loss"); return; }
+          btn.disabled = true; btn.textContent = "Creating…";
+          try {
+            await Api.post("/admin/prizes/create", { name, chipAmount });
+            r.style.display = "block"; r.style.color = "var(--win)"; r.textContent = "✅ Prize created.";
+            loadPrizes();
+          } catch (err) {
+            r.style.display = "block"; r.style.color = "var(--loss)"; r.textContent = err.message;
+            btn.disabled = false; btn.textContent = "Create Prize";
+          }
+        });
+      } catch (err) {
+        pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+      }
+    }
+
+    // ── Subscriptions ──────────────────────────────────────────────────────────
+    async function loadSubscriptions() {
+      const pane = container.querySelector("#adm-pane-subscriptions");
+      if (!pane) return;
+
+      async function render() {
+        pane.innerHTML = `<div style="color:var(--text-dim);padding:40px 20px;text-align:center;">⏳ Loading subscriptions…</div>`;
+        try {
+          const [pendingData, allData] = await Promise.all([
+            Api.get("/admin/subscriptions/pending"),
+            Api.get("/admin/subscriptions"),
+          ]);
+
+          const pending = pendingData.users || [];
+          const all = allData.users || [];
+
+          function tierBadge(tier) {
+            if (!tier) return `<span style="color:var(--text-dim);font-size:0.78rem;">None</span>`;
+            const t = PATREON_TIER_INFO[tier] || { label: tier, c: "#9ca3af" };
+            return `<span style="color:${t.c};font-weight:700;font-size:0.78rem;">${t.label}</span>`;
+          }
+
+          function approvalStatus(u) {
+            if (!u.isApproved) return `<span style="color:var(--loss);font-weight:700;font-size:0.78rem;">⏳ Pending</span>`;
+            const expiry = u.approvedUntil ? new Date(u.approvedUntil) : null;
+            if (expiry && expiry < new Date()) return `<span style="color:var(--loss);font-weight:700;font-size:0.78rem;">⚠️ Expired</span>`;
+            const daysLeft = expiry ? Math.ceil((expiry - Date.now()) / 86400000) : null;
+            return `<span style="color:var(--win);font-weight:700;font-size:0.78rem;">✅ Active${daysLeft !== null ? ` (${daysLeft}d left)` : ""}</span>`;
+          }
+
+          pane.innerHTML = `
+            <div style="${S.sectionCard}">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+                <h3 style="${S.sectionTitle};margin:0;">⏳ Pending Approvals (${pending.length})</h3>
+                <button id="adm-sub-revoke-expired" style="${S.redBtn}">Revoke All Expired</button>
+              </div>
+              ${pending.length === 0
+                ? `<p style="color:var(--text-dim);font-size:0.88rem;">No pending requests.</p>`
+                : `<div style="${S.tableWrap}">
+                  <table style="${S.table}">
+                    <thead><tr>
+                      <th style="${S.th}">Username</th>
+                      <th style="${S.th}">Patreon</th>
+                      <th style="${S.th}">Registered</th>
+                      <th style="${S.th}">Tier</th>
+                      <th style="${S.th}">Days</th>
+                      <th style="${S.th}">Approve</th>
+                    </tr></thead>
+                    <tbody>
+                      ${pending.map(u => `
+                        <tr>
+                          <td style="${S.td};font-weight:700;color:var(--accent-2);">${u.username}</td>
+                          <td style="${S.td};font-style:italic;color:var(--text-dim);">${u.patreonUsername || "—"}</td>
+                          <td style="${S.td};color:var(--text-dim);">${fmtDate(u.createdAt)}</td>
+                          <td style="${S.td};">
+                            <select class="adm-sub-tier" data-id="${u.id}" style="${S.rankSelect}">
+                              ${Object.entries(PATREON_TIER_INFO).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join("")}
+                            </select>
+                          </td>
+                          <td style="${S.td};">
+                            <input class="adm-sub-days" data-id="${u.id}" type="number" value="31" min="1" max="365"
+                              style="${S.rankSelect};width:60px;" />
+                          </td>
+                          <td style="${S.td};">
+                            <button class="adm-sub-approve" data-id="${u.id}" style="${S.greenBtn}">✅ Approve</button>
+                          </td>
+                        </tr>`).join("")}
+                    </tbody>
+                  </table>
+                </div>`}
+            </div>
+
+            <div style="${S.sectionCard}">
+              <h3 style="${S.sectionTitle}">🔑 All Subscriptions</h3>
+              <div style="${S.tableWrap}">
+                <table style="${S.table}">
+                  <thead><tr>
+                    <th style="${S.th}">Username</th>
+                    <th style="${S.th}">Patreon</th>
+                    <th style="${S.th}">Tier</th>
+                    <th style="${S.th}">Status</th>
+                    <th style="${S.th}">Expires</th>
+                    <th style="${S.th}">Actions</th>
+                  </tr></thead>
+                  <tbody>
+                    ${all.map(u => `
+                      <tr>
+                        <td style="${S.td};font-weight:700;color:var(--accent-2);">${u.username}</td>
+                        <td style="${S.td};color:var(--text-dim);">${u.patreonUsername || "—"}</td>
+                        <td style="${S.td};">${tierBadge(u.patreonTier)}</td>
+                        <td style="${S.td};">${approvalStatus(u)}</td>
+                        <td style="${S.td};color:var(--text-dim);">${u.approvedUntil ? new Date(u.approvedUntil).toLocaleDateString() : "—"}</td>
+                        <td style="${S.td};">
+                          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            ${!u.isApproved
+                              ? `<button class="adm-sub-approve-quick" data-id="${u.id}" style="${S.greenBtn}">Approve 31d</button>`
+                              : `<button class="adm-sub-extend" data-id="${u.id}" style="${S.smallBtn}">+31d</button>`}
+                            ${u.isApproved
+                              ? `<button class="adm-sub-revoke" data-id="${u.id}" style="${S.redBtn}">Revoke</button>`
+                              : ""}
+                          </div>
+                        </td>
+                      </tr>`).join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+
+          // Approve pending user
+          pane.querySelectorAll(".adm-sub-approve").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const id = btn.dataset.id;
+              const tier = pane.querySelector(`.adm-sub-tier[data-id="${id}"]`).value;
+              const days = Number(pane.querySelector(`.adm-sub-days[data-id="${id}"]`).value) || 31;
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${id}/approve`, { patreonTier: tier, daysValid: days });
+                UI.toast("User approved!", "win");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "✅ Approve";
+              }
+            });
+          });
+
+          // Quick approve (31d default bronze)
+          pane.querySelectorAll(".adm-sub-approve-quick").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${btn.dataset.id}/approve`, { patreonTier: "bronze_patron", daysValid: 31 });
+                UI.toast("Approved for 31 days!", "win");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "Approve 31d";
+              }
+            });
+          });
+
+          // Extend subscription
+          pane.querySelectorAll(".adm-sub-extend").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${btn.dataset.id}/approve`, { patreonTier: "bronze_patron", daysValid: 31 });
+                UI.toast("Extended by 31 days!", "win");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "+31d";
+              }
+            });
+          });
+
+          // Revoke subscription
+          pane.querySelectorAll(".adm-sub-revoke").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              if (!confirm("Revoke this user's subscription?")) return;
+              btn.disabled = true; btn.textContent = "…";
+              try {
+                await Api.post(`/admin/subscriptions/${btn.dataset.id}/revoke`, {});
+                UI.toast("Subscription revoked.", "info");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                btn.disabled = false; btn.textContent = "Revoke";
+              }
+            });
+          });
+
+          // Revoke all expired
+          const revokeExpiredBtn = pane.querySelector("#adm-sub-revoke-expired");
+          if (revokeExpiredBtn) {
+            revokeExpiredBtn.addEventListener("click", async () => {
+              if (!confirm("Revoke all expired subscriptions?")) return;
+              revokeExpiredBtn.disabled = true; revokeExpiredBtn.textContent = "Working…";
+              try {
+                const r = await Api.post("/admin/subscriptions/revoke-expired", {});
+                UI.toast(`Revoked ${r.revoked} expired subscriptions.`, "info");
+                render();
+              } catch (err) {
+                UI.toast(err.message || "Failed.", "loss");
+                revokeExpiredBtn.disabled = false; revokeExpiredBtn.textContent = "Revoke All Expired";
+              }
+            });
+          }
+        } catch (err) {
+          pane.innerHTML = `<div style="color:var(--loss);padding:20px;">${err.message}</div>`;
+        }
+      }
+
+      render();
     }
 
     buildSkeleton();
