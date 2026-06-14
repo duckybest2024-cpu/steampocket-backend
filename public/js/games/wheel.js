@@ -44,8 +44,8 @@ const WheelGame = (() => {
         </div>
 
         <div class="game-canvas">
-          <div class="wheel-wrap" style="display:flex; justify-content:center; align-items:center; flex:1;">
-            <canvas id="wheel-canvas" width="280" height="280"></canvas>
+          <div class="wheel-wrap">
+            <canvas id="wheel-canvas" width="300" height="300"></canvas>
             <div class="wheel-pointer">▼</div>
           </div>
 

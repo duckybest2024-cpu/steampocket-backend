@@ -23,6 +23,7 @@ import { casesRouter } from "./routes/cases";
 import { arcadeRouter } from "./routes/arcade";
 import { scratchRouter } from "./routes/scratch";
 import { eventsRouter } from "./routes/events";
+import { statsRouter } from "./routes/stats";
 import { prisma } from "./lib/prisma";
 import { getLiqpayKeys, verifyLiqpayCallback, liqpayDecode } from "./lib/liqpay";
 import { CHIP_PACKAGES } from "./lib/stripe";
@@ -112,6 +113,7 @@ export function createApp() {
   app.use("/games/videopoker", videoPokerRouter);
 
   app.use("/leaderboard", leaderboardRouter);
+  app.use("/stats", statsRouter);
   app.use("/friends", friendsRouter);
   app.use("/admin", adminRouter);
   app.use("/nfts", nftRouter);

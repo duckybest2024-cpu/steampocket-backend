@@ -1438,3 +1438,187 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
   box-shadow: 0 0 12px var(--slot-color, var(--accent));
   z-index: 1;
 }
+
+/* ── Crash game ──────────────────────────────────────────────────────────── */
+.crash-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, #0d2137 0%, #060f1a 100%);
+  border: 1px solid var(--border);
+  padding: 24px;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.crash-multiplier {
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  transition: color 0.2s;
+  color: var(--text-dim);
+  line-height: 1;
+}
+.crash-multiplier.betting  { color: var(--text-dim); }
+.crash-multiplier.running  { color: var(--win); text-shadow: 0 0 24px rgba(0,231,1,0.5); }
+.crash-multiplier.crashed  { color: var(--loss); text-shadow: 0 0 24px rgba(239,68,68,0.5); }
+.crash-multiplier.cashed   { color: var(--gold); }
+.crash-phase-label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-align: center;
+}
+.crash-history {
+  display: flex;
+  gap: 5px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+}
+.crash-history::-webkit-scrollbar { display: none; }
+.crash-history span {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  cursor: default;
+  white-space: nowrap;
+}
+.crash-history span.low  { color: var(--loss); border-color: rgba(229,70,61,0.45); background: rgba(229,70,61,0.08); }
+.crash-history span.mid  { color: var(--gold); border-color: rgba(240,194,68,0.45); background: rgba(240,194,68,0.08); }
+.crash-history span.high { color: var(--win);  border-color: rgba(0,231,1,0.35);   background: rgba(0,231,1,0.06); }
+.crash-bets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.crash-bet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  gap: 8px;
+}
+.crash-bet-row.cashed { border-color: rgba(0,231,1,0.4); color: var(--win); background: rgba(0,231,1,0.05); }
+.crash-bet-row.lost   { border-color: rgba(229,70,61,0.4); color: var(--loss); background: rgba(229,70,61,0.05); text-decoration: line-through; opacity: 0.6; }
+
+/* ── Limbo roll number ───────────────────────────────────────────────────── */
+.roll-number { transition: color 0.3s; }
+.roll-number.win  { color: var(--win); }
+.roll-number.loss { color: var(--loss); }
+
+/* ── Wheel game ──────────────────────────────────────────────────────────── */
+.wheel-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  padding: 20px 0;
+}
+.wheel-pointer {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.6rem;
+  color: var(--gold);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  z-index: 10;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ── VideoPoker card highlight ───────────────────────────────────────────── */
+.vp-highlight {
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px var(--gold), 0 4px 16px rgba(240,194,68,0.35);
+}
+
+/* ── Stat boxes (Dice / Limbo) ───────────────────────────────────────────── */
+.stat-boxes { display: flex; gap: 8px; }
+.stat-box {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stat-box .sb-label { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-box .sb-value { font-size: 1rem; font-weight: 700; color: var(--text); }
+}
+
+/* ── Player Stats Page ───────────────────────────────────────────────────── */
+.stats-page { padding: 20px; display: flex; flex-direction: column; gap: 24px; }
+.stats-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.hero-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #6f5cf2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+.hero-name { font-size: 1.4rem; font-weight: 800; }
+.hero-rank { font-size: 0.85rem; color: var(--text-dim); margin-top: 4px; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.stats-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sc-label { font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+.sc-value { font-size: 1.35rem; font-weight: 800; line-height: 1.1; }
+.sc-sub { font-size: 0.75rem; color: var(--text-dim); }
+.stats-section-title { font-size: 1rem; font-weight: 700; margin: 0; color: var(--text); }
+.table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.stats-table thead tr { background: var(--bg-elev); }
+.stats-table th { padding: 10px 14px; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); font-weight: 700; white-space: nowrap; }
+.stats-table td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--text); }
+.stats-table tbody tr:hover { background: var(--bg-elev); }
+.game-tag { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; white-space: nowrap; }
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stats-table th, .stats-table td { padding: 8px 10px; font-size: 0.78rem; }
+}

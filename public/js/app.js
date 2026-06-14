@@ -81,6 +81,7 @@ const App = (() => {
       section: "Account",
       items: [
         { key: "chipshop",    icon: "🏦", label: "Chip Shop",         mod: () => ChipShopGame },
+        { key: "stats",       icon: "📊", label: "My Stats",          mod: () => StatsGame },
         { key: "leaderboard", icon: "🏆", label: "Leaderboard",       mod: () => LeaderboardGame },
         { key: "friends",     icon: "👥", label: "Friends",           mod: () => FriendsGame },
         { key: "settings",    icon: "⚙️", label: "Settings",          mod: () => SettingsGame },
