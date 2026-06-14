@@ -12,10 +12,10 @@ import { isOwner } from "../lib/owner";
 export const authRouter = Router();
 
 const credentialsSchema = z.object({
-  username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/, "letters, numbers, underscore only"),
-  email: z.string().email(),
-  password: z.string().min(8).max(72),
-  patreonUsername: z.string().min(2).max(50),
+  username: z.string().min(3, "Username must be at least 3 characters").max(20).regex(/^[a-zA-Z0-9_]+$/, "Username: letters, numbers, underscore only"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
+  patreonUsername: z.string().min(1).max(50).optional().nullable(),
 });
 
 authRouter.post("/register", async (req, res) => {
@@ -147,15 +147,18 @@ authRouter.post("/login", async (req, res) => {
     const token = signToken(user.id);
     const pub = publicUser(user);
 
-    // If account is pending approval, return token but flag it
-    if (!user.isApproved) {
-      return res.json({ token, user: pub, pendingApproval: true });
-    }
+    // Owner is always approved regardless of DB value
+    const ownerUser = isOwner(user.username);
 
-    // Check subscription expiry
-    if (user.approvedUntil && user.approvedUntil < new Date()) {
+    // Check subscription expiry (skip for owner/admin)
+    if (!ownerUser && !user.isAdmin && user.isApproved && user.approvedUntil && user.approvedUntil < new Date()) {
       await prisma.user.update({ where: { id: user.id }, data: { isApproved: false } });
       return res.json({ token, user: { ...pub, isApproved: false }, pendingApproval: true });
+    }
+
+    // If account is pending approval, return token but flag it (skip for owner/admin)
+    if (!ownerUser && !user.isAdmin && !user.isApproved) {
+      return res.json({ token, user: pub, pendingApproval: true });
     }
 
     res.json({ token, user: pub });

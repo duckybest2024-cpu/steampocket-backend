@@ -341,10 +341,10 @@ const App = (() => {
       const emailVal = fd.get("email");
       try {
         const data = await Api.register({
-          username: fd.get("username"),
-          email: emailVal,
-          password: fd.get("password"),
-          patreonUsername: fd.get("patreonUsername"),
+          username: (fd.get("username") || "").trim(),
+          email: (emailVal || "").trim(),
+          password: fd.get("password") || "",
+          patreonUsername: (fd.get("patreonUsername") || "").trim() || null,
         });
         if (data.token) {
           Api.setToken(data.token);
