@@ -56,7 +56,7 @@ walletRouter.post("/create-checkout-session", requireAuth, async (req: AuthedReq
             currency: "usd",
             product_data: {
               name: `${pkg.name} — ${pkg.chips} chips`,
-              description: `${pkg.chips.toLocaleString()} Casino Aurelius chips (play money). Use test card 4242 4242 4242 4242.`,
+              description: `${pkg.chips.toLocaleString()} GrilledCoin chips (play money). Use test card 4242 4242 4242 4242.`,
             },
             unit_amount: pkg.priceCents,
           },
@@ -120,7 +120,7 @@ walletRouter.post("/liqpay-checkout", requireAuth, async (req: AuthedRequest, re
       privateKey: keys.privateKey,
       amountSmallest,
       currency,
-      description: `${pkg.name} — ${pkg.chips.toLocaleString()} Casino Aurelius chips`,
+      description: `${pkg.name} — ${pkg.chips.toLocaleString()} GrilledCoin chips`,
       orderId,
       serverUrl: `${origin}/wallet/liqpay-callback`,
       resultUrl: `${origin}/?checkout=success`,
@@ -172,8 +172,13 @@ walletRouter.post("/buy-chips", requireAuth, async (req: AuthedRequest, res) => 
   }
 });
 
+const cashoutSchema = z.object({ amount: z.number().int().positive().optional() });
+
 walletRouter.post("/cashout-chips", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const parsed = cashoutSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
     const userId = req.userId!;
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
 
@@ -184,7 +189,9 @@ walletRouter.post("/cashout-chips", requireAuth, async (req: AuthedRequest, res)
       return res.status(400).json({ error: `Minimum cashout is 50 chips (you have ${Math.floor(user.balance / 100)})` });
     }
 
-    const amount = user.balance;
+    const requestedAmount = parsed.data.amount;
+    const amount = requestedAmount ? Math.min(requestedAmount, user.balance) : user.balance;
+    if (amount < MIN_CASHOUT_CENTS) return res.status(400).json({ error: "Minimum cashout is 50 chips" });
     const updated = await prisma.$transaction(async (tx) => {
       const u = await tx.user.update({
         where: { id: userId },

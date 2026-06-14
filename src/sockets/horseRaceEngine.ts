@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma";
 import { config } from "../lib/config";
 import { applyLedgerEntry } from "../lib/wallet";
 
-interface AuthedSocket extends Socket { data: { userId?: string; username?: string } }
+interface AuthedSocket extends Socket { data: { userId?: string; username?: string; isApproved?: boolean } }
 
 const HORSES = [
   { id: 0, name: "Lightning", emoji: "⚡", color: "#f59e0b", odds: 2.0 },
@@ -46,8 +46,8 @@ export class HorseRaceEngine {
       if (token) {
         try {
           const payload = jwt.verify(token, config.jwtSecret) as { sub: string };
-          const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true, username: true } });
-          if (user) { socket.data.userId = user.id; socket.data.username = user.username; }
+          const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true, username: true, isApproved: true, approvedUntil: true } });
+          if (user) { socket.data.userId = user.id; socket.data.username = user.username; socket.data.isApproved = user.isApproved && (!user.approvedUntil || user.approvedUntil > new Date()); }
         } catch {}
       }
       next();
@@ -59,6 +59,7 @@ export class HorseRaceEngine {
 
       socket.on("bet", async ({ horseId, amount }: { horseId: number; amount: number }) => {
         if (!socket.data.userId) return socket.emit("error", "Login required");
+      if (!socket.data.isApproved) return socket.emit("error", "Active subscription required. Visit patreon.com/GrilledCoin.");
         if (this.phase !== "betting") return socket.emit("error", "Betting is closed");
         if (horseId < 0 || horseId >= HORSES.length) return socket.emit("error", "Invalid horse");
         if (!Number.isInteger(amount) || amount < 100) return socket.emit("error", "Min bet: 1 chip");

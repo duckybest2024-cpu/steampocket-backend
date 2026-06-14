@@ -78,14 +78,20 @@ const ChipShopGame = (() => {
           <!-- Cash out to bank -->
           <div class="chip-section cashout-section">
             <h3>💰 Cash Out to Bank</h3>
-            <p class="chip-section-hint">Lock your chips in the bank — safe from bets. Buy them back any time.</p>
+            <p class="chip-section-hint">Lock chips in the bank — safe from bets. Min 50 chips.</p>
             ${gameChips === 0 ? `<p class="chip-empty-hint">No chips on the table to cash out.</p>` : `
+              <div class="controls-row" style="margin-bottom:10px">
+                <div class="field">
+                  <label>Amount (chips)</label>
+                  <input type="number" id="cashout-amount" min="50" max="${gameChips}" value="${gameChips}" />
+                </div>
+              </div>
               <div class="cashout-preview">
                 <div class="cashout-row"><span>Playing chips</span><span>${gameChips.toLocaleString()} 🪙</span></div>
-                <div class="cashout-row total"><span>Moves to bank</span><span class="co-green">${gameChips.toLocaleString()} 🏦</span></div>
               </div>
-              <div class="btn-row" style="margin-top:12px">
-                <button id="cashout-btn" class="danger-btn">Cash Out All</button>
+              <div class="btn-row" style="margin-top:12px;gap:8px">
+                <button id="cashout-btn" class="danger-btn">Cash Out Selected</button>
+                <button id="cashout-all-btn" class="danger-btn" style="opacity:0.7">Cash Out All</button>
               </div>
             `}
           </div>
@@ -167,24 +173,27 @@ const ChipShopGame = (() => {
         });
       });
 
-      // Cash out
-      const cashoutBtn = container.querySelector("#cashout-btn");
-      if (cashoutBtn) {
-        cashoutBtn.addEventListener("click", async () => {
-          cashoutBtn.disabled = true;
-          try {
-            const res = await Api.post("/wallet/cashout-chips", {});
-            accountState.balance = res.balance;
-            accountState.bank = res.bank;
-            UI.setBalance(res.balance);
-            UI.toast(`${Math.floor(res.cashedOut / 100)} chips moved to bank!`, "win");
-            rebuild();
-          } catch (err) {
-            UI.toast(err.message, "loss");
-            cashoutBtn.disabled = false;
-          }
-        });
+      // Cash out (chosen amount)
+      async function doCashout(allChips) {
+        const amountInput = container.querySelector("#cashout-amount");
+        const chips = allChips ? null : Math.round(Number(amountInput?.value || 0));
+        if (!allChips && (!chips || chips < 50)) return UI.toast("Minimum cashout is 50 chips", "loss");
+        const body = chips ? { amount: chips * 100 } : {};
+        try {
+          const res = await Api.post("/wallet/cashout-chips", body);
+          accountState.balance = res.balance;
+          accountState.bank = res.bank;
+          UI.setBalance(res.balance);
+          UI.toast(`${Math.floor(res.cashedOut / 100).toLocaleString()} chips moved to bank!`, "win");
+          rebuild();
+        } catch (err) {
+          UI.toast(err.message, "loss");
+        }
       }
+      const cashoutBtn = container.querySelector("#cashout-btn");
+      if (cashoutBtn) cashoutBtn.addEventListener("click", () => doCashout(false));
+      const cashoutAllBtn = container.querySelector("#cashout-all-btn");
+      if (cashoutAllBtn) cashoutAllBtn.addEventListener("click", () => doCashout(true));
 
       // Bank → table
       const b2tBtn = container.querySelector("#bank-to-table-btn");

@@ -169,6 +169,11 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.userId } });
     if (!user) return res.status(404).json({ error: "User not found" });
+    // Auto-revoke expired subscriptions
+    if (user.isApproved && user.approvedUntil && user.approvedUntil < new Date()) {
+      await prisma.user.update({ where: { id: user.id }, data: { isApproved: false } });
+      user.isApproved = false;
+    }
     res.json({ user: publicUser(user) });
   } catch (err) {
     console.error("Me error:", err);

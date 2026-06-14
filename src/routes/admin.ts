@@ -1036,7 +1036,7 @@ adminRouter.get("/subscriptions", async (_req, res) => {
 });
 
 const approveSchema = z.object({
-  patreonTier: z.enum(["bronze_patron","silver_patron","gold_patron","platinum_patron","diamond_patron"]).optional(),
+  patreonTier: z.enum(["bronze_patron","silver_patron","gold_patron","platinum_patron","diamond_patron","netherite_patron"]).optional(),
   daysValid: z.number().int().min(1).max(365).optional(),
 });
 

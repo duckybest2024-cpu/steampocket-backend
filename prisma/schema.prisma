@@ -315,6 +315,40 @@ model NftListing {
   @@index([status])
 }
 
+model Event {
+  id           String   @id @default(cuid())
+  hostId       String
+  hostName     String
+  title        String
+  description  String   @default("")
+  entryFee     Int      @default(0)
+  maxPlayers   Int      @default(50)
+  hostCutPct   Int      @default(5)
+  prizePool    Int      @default(0)
+  hostEarned   Int      @default(0)
+  status       String   @default("open")
+  winnerId     String?
+  winnerName   String?
+  createdAt    DateTime @default(now())
+  completedAt  DateTime?
+  participants EventParticipant[]
+
+  @@index([status])
+  @@index([hostId])
+}
+
+model EventParticipant {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  username  String
+  joinedAt  DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+}
+
 model BoardGameRoom {
   id         String   @id @default(cuid())
   game       String   // chess | checkers | battleship | durak | wildcards | poker | bridge | monopoly

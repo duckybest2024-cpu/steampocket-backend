@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth, AuthedRequest } from "../../middleware/auth";
+import { requireAuth, requireApproved, AuthedRequest } from "../../middleware/auth";
 import { placeBet, BadBetInputError } from "../../lib/betting";
 import { playDice, validateDice } from "../../games/dice";
 import { playLimbo, validateLimbo } from "../../games/limbo";
@@ -29,7 +29,7 @@ const diceSchema = z.object({
   direction: z.enum(["over", "under"]),
 });
 
-instantGamesRouter.post("/dice", requireAuth, async (req: AuthedRequest, res) => {
+instantGamesRouter.post("/dice", requireAuth, requireApproved, async (req: AuthedRequest, res) => {
   const parsed = diceSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -61,7 +61,7 @@ const limboSchema = z.object({
   targetMultiplier: z.number().min(1.01).max(1_000_000),
 });
 
-instantGamesRouter.post("/limbo", requireAuth, async (req: AuthedRequest, res) => {
+instantGamesRouter.post("/limbo", requireAuth, requireApproved, async (req: AuthedRequest, res) => {
   const parsed = limboSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -94,7 +94,7 @@ const plinkoSchema = z.object({
   rows: z.number().int(),
 });
 
-instantGamesRouter.post("/plinko", requireAuth, async (req: AuthedRequest, res) => {
+instantGamesRouter.post("/plinko", requireAuth, requireApproved, async (req: AuthedRequest, res) => {
   const parsed = plinkoSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -127,7 +127,7 @@ const kenoSchema = z.object({
   picks: z.array(z.number().int()).min(2).max(10),
 });
 
-instantGamesRouter.post("/keno", requireAuth, async (req: AuthedRequest, res) => {
+instantGamesRouter.post("/keno", requireAuth, requireApproved, async (req: AuthedRequest, res) => {
   const parsed = kenoSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -166,7 +166,7 @@ const wheelSchema = z.object({
   risk: z.enum(["low", "medium", "high"]),
 });
 
-instantGamesRouter.post("/wheel", requireAuth, async (req: AuthedRequest, res) => {
+instantGamesRouter.post("/wheel", requireAuth, requireApproved, async (req: AuthedRequest, res) => {
   const parsed = wheelSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 
@@ -204,7 +204,7 @@ const baccaratSchema = z.object({
   bet: z.enum(["player", "banker", "tie"]),
 });
 
-instantGamesRouter.post("/baccarat", requireAuth, async (req: AuthedRequest, res) => {
+instantGamesRouter.post("/baccarat", requireAuth, requireApproved, async (req: AuthedRequest, res) => {
   const parsed = baccaratSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 

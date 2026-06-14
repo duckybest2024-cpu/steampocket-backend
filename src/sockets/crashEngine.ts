@@ -22,7 +22,7 @@ interface RoundBet {
 }
 
 interface AuthedSocket extends Socket {
-  data: { userId?: string; username?: string };
+  data: { userId?: string; username?: string; isApproved?: boolean };
 }
 
 /**
@@ -57,10 +57,11 @@ export class CrashEngine {
       if (token) {
         try {
           const payload = jwt.verify(token, config.jwtSecret) as { sub: string };
-          const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true, username: true } });
+          const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true, username: true, isApproved: true, approvedUntil: true } });
           if (user) {
             socket.data.userId = user.id;
             socket.data.username = user.username;
+            socket.data.isApproved = user.isApproved && (!user.approvedUntil || user.approvedUntil > new Date());
           }
         } catch {
           // Invalid token -> connect anonymously (spectators can still watch the feed).
@@ -194,6 +195,7 @@ export class CrashEngine {
     const reply = (resp: unknown) => ack?.(resp);
     const userId = socket.data.userId;
     if (!userId) return reply({ error: "Authentication required to place bets" });
+    if (!socket.data.isApproved) return reply({ error: "Active subscription required to play. Visit patreon.com/GrilledCoin." });
     if (this.phase !== "betting") return reply({ error: "Betting is closed for this round" });
     if (this.bets.has(userId)) return reply({ error: "You already have a bet in this round" });
 

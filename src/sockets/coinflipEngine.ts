@@ -29,7 +29,7 @@ interface RecentResult {
 }
 
 interface AuthedSocket extends Socket {
-  data: { userId?: string; username?: string };
+  data: { userId?: string; username?: string; isApproved?: boolean };
 }
 
 export class CoinflipEngine {
@@ -52,11 +52,12 @@ export class CoinflipEngine {
           const payload = jwt.verify(token, config.jwtSecret) as { sub: string };
           const user = await prisma.user.findUnique({
             where: { id: payload.sub },
-            select: { id: true, username: true },
+            select: { id: true, username: true, isApproved: true, approvedUntil: true },
           });
           if (user) {
             socket.data.userId = user.id;
             socket.data.username = user.username;
+            socket.data.isApproved = user.isApproved && (!user.approvedUntil || user.approvedUntil > new Date());
           }
         } catch {
           // Anonymous spectator — can watch but not play
@@ -100,6 +101,7 @@ export class CoinflipEngine {
     const reply = (resp: unknown) => ack?.(resp);
     const userId = socket.data.userId;
     if (!userId) return reply({ error: "Authentication required" });
+    if (!socket.data.isApproved) return reply({ error: "Active subscription required. Visit patreon.com/GrilledCoin." });
 
     // Prevent duplicate open challenges from same user
     for (const c of this.challenges.values()) {
@@ -155,6 +157,7 @@ export class CoinflipEngine {
     const reply = (resp: unknown) => ack?.(resp);
     const userId = socket.data.userId;
     if (!userId) return reply({ error: "Authentication required" });
+    if (!socket.data.isApproved) return reply({ error: "Active subscription required. Visit patreon.com/GrilledCoin." });
 
     const body = payload as { challengeId?: unknown };
     const id = String(body?.challengeId ?? "");
@@ -180,6 +183,7 @@ export class CoinflipEngine {
     const reply = (resp: unknown) => ack?.(resp);
     const userId = socket.data.userId;
     if (!userId) return reply({ error: "Authentication required" });
+    if (!socket.data.isApproved) return reply({ error: "Active subscription required. Visit patreon.com/GrilledCoin." });
 
     const body = payload as { challengeId?: unknown };
     const id = String(body?.challengeId ?? "");

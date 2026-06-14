@@ -5,8 +5,7 @@ const PlinkoGame = (() => {
     let busy = false;
 
     container.innerHTML = `
-      <div class="game-panel">
-        <div class="game-layout">
+      <div class="game-layout">
 
           <div class="bet-panel">
             <div class="bp-tabs">
@@ -56,7 +55,6 @@ const PlinkoGame = (() => {
           </div>
 
         </div>
-      </div>
     `;
 
     const els = {

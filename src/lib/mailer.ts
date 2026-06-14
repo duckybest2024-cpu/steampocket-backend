@@ -4,7 +4,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = Number(process.env.SMTP_PORT ?? 587);
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_FROM = process.env.SMTP_FROM ?? "Casino Aurelius <noreply@casino-aurelius.app>";
+const SMTP_FROM = process.env.SMTP_FROM ?? "GrilledCoin <noreply@casino-aurelius.app>";
 
 function getTransporter() {
   if (!SMTP_HOST) return null;
@@ -37,7 +37,7 @@ export async function sendVerificationEmail(
   await transporter.sendMail({
     from: SMTP_FROM,
     to,
-    subject: "Verify your Casino Aurelius email",
+    subject: "Verify your GrilledCoin email",
     text: [
       `Hi ${username},`,
       ``,
@@ -49,7 +49,7 @@ export async function sendVerificationEmail(
     ].join("\n"),
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-        <h2 style="color:#6f5cf2">🎰 Casino Aurelius</h2>
+        <h2 style="color:#6f5cf2">🍖 GrilledCoin</h2>
         <p>Hi <strong>${username}</strong>,</p>
         <p>Please verify your email address to finish creating your account.</p>
         <p style="margin:24px 0">

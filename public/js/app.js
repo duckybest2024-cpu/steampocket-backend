@@ -1,6 +1,6 @@
 /* Casino Aurelius — App shell with Stake-inspired sidebar layout */
 const App = (() => {
-  const state = { id: null, username: null, nickname: null, rank: "newcomer", balance: 0, bank: 0, level: 1, xp: 0, fairness: null, isAdmin: false, isApproved: true, patreonUsername: null, patreonTier: null };
+  const state = { id: null, username: null, nickname: null, rank: "free", balance: 0, bank: 0, fairness: null, isAdmin: false, isApproved: false, patreonUsername: null, patreonTier: null };
   let _lowBalanceToastShown = false;
 
   const NAV = [
@@ -53,6 +53,12 @@ const App = (() => {
       section: "Board Games",
       items: [
         { key: "boardgames",  icon: "♟️", label: "Board Games",      mod: () => BoardGamesGame },
+      ],
+    },
+    {
+      section: "Events",
+      items: [
+        { key: "events", icon: "🎪", label: "Events", mod: () => EventsGame },
       ],
     },
     {
@@ -199,8 +205,6 @@ const App = (() => {
     state.rank = user.rank ?? "newcomer";
     state.balance = user.balance;
     state.bank = user.bank ?? 0;
-    state.level = user.level;
-    state.xp = user.xp;
     state.fairness = user.fairness;
     state.isAdmin = user.isAdmin ?? false;
     state.isApproved = user.isApproved ?? true;
@@ -215,14 +219,20 @@ const App = (() => {
     const tbEl = document.getElementById("topbar-balance");
     if (tbEl) tbEl.textContent = Math.floor(state.balance / 100).toLocaleString();
 
-    // Level / XP
-    const lvlEl = document.getElementById("user-level-label");
-    if (lvlEl) lvlEl.textContent = `Level ${state.level}`;
-    const xpFill = document.getElementById("xp-fill");
-    if (xpFill) {
-      const xpForNext = state.level * 100;
-      const xpPct = Math.min(100, Math.round((state.xp / xpForNext) * 100));
-      xpFill.style.width = xpPct + "%";
+    // Subscription tier badge
+    const tierEl = document.getElementById("sb-tier-row");
+    if (tierEl) {
+      const TIER_LABELS = {
+        bronze_patron: "🥉 Bronze Patron",
+        silver_patron: "🥈 Silver Patron",
+        gold_patron: "🥇 Gold Patron",
+        platinum_patron: "💠 Platinum Patron",
+        diamond_patron: "💎 Diamond Patron",
+        netherite_patron: "⚫ Netherite Patron",
+      };
+      tierEl.textContent = state.patreonTier
+        ? (TIER_LABELS[state.patreonTier] || state.patreonTier)
+        : (state.isApproved ? "✅ Active" : "🔒 No Subscription");
     }
 
     if (state.balance <= 1000 && !_lowBalanceToastShown) {
@@ -341,7 +351,7 @@ const App = (() => {
           if (data.user && data.user.isApproved === false) {
             showPendingApproval(data.user);
           } else {
-            UI.toast("Welcome to Casino Aurelius! Visit Chip Shop to buy chips.", "win");
+            UI.toast("Welcome to GrilledCoin! Visit Chip Shop to buy chips.", "win");
             await enterApp();
           }
         }
