@@ -94,10 +94,12 @@ const UI = (() => {
     return { rank: card.rank, suit: card.suit, red: SUIT_RED.has(card.suit) };
   }
 
+  const SUIT_LETTER = {"♠":"S","♥":"H","♦":"D","♣":"C"};
+
   function renderCard(card, faceDown = false) {
-    if (faceDown) return `<div class="card hidden-card">??</div>`;
-    const red = SUIT_RED.has(card.suit) ? "red-suit" : "";
-    return `<div class="card ${red}">${card.rank}<span>${card.suit}</span></div>`;
+    if (faceDown) return `<img class="card-svg face-down" src="/images/card-back.png" alt="?" />`;
+    const letter = SUIT_LETTER[card.suit] || "S";
+    return `<img class="card-svg" src="/images/cards/${card.rank}${letter}.svg" alt="${card.rank}${card.suit}" />`;
   }
 
   function symbolGlyph(symbol) {

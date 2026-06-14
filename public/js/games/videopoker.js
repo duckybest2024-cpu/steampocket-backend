@@ -96,9 +96,9 @@ const VideoPokerGame = (() => {
         const wrap = document.createElement("div");
         wrap.className = `vp-card-wrap${isHighlight ? " vp-highlight" : ""}`;
 
-        const red = card.suit === "♥" || card.suit === "♦";
+        const suitLetter = {"♠":"S","♥":"H","♦":"D","♣":"C"}[card.suit] || "S";
         wrap.innerHTML = `
-          <div class="card ${red ? "red-suit" : ""}" style="${isHighlight ? "box-shadow:0 0 0 3px var(--gold)" : ""}">${card.rank}<span>${card.suit}</span></div>
+          <img class="card-svg vp-card-img${isHighlight ? " vp-highlight-card" : ""}" src="/images/cards/${card.rank}${suitLetter}.svg" alt="${card.rank}${card.suit}" />
           <div class="vp-hold-badge${isHeld ? " active" : ""}">${isHeld ? "HELD" : "HOLD"}</div>
         `;
 

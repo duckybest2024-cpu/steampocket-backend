@@ -126,7 +126,7 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
 }
 
 .auth-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
-.auth-logo-icon { font-size: 2.4rem; line-height: 1; }
+.auth-logo-icon { font-size: 2.4rem; line-height: 1; width: 56px; height: 56px; object-fit: contain; }
 .auth-logo-name { font-size: 1.3rem; font-weight: 800; }
 .auth-logo-sub  { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
 
@@ -169,7 +169,7 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
   padding: 0 16px; height: var(--topbar-h);
   border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
-.sidebar-logo-icon { font-size: 1.6rem; }
+.sidebar-logo-icon { font-size: 1.6rem; width: 34px; height: 34px; object-fit: contain; }
 .sidebar-logo-text { font-size: 1rem; font-weight: 800; flex: 1; white-space: nowrap; overflow: hidden; color: var(--text); }
 .sidebar-close { background: none; color: var(--text-mute); font-size: 1rem; padding: 4px 6px; border-radius: 6px; display: none; flex-shrink: 0; }
 .sidebar-close:hover { color: var(--text); }
@@ -1022,4 +1022,419 @@ button { font-family: inherit; cursor: pointer; border: none; outline: none; }
 .sidebar-footer {
   background: url('/images/wood.jpg') center/cover;
   background-size: cover;
+}
+
+/* ── GrilledCoin SVG Logo ──────────────────────────────── */
+.auth-logo-icon {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.sidebar-logo-icon {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* ── SVG Playing Cards ──────────────────────────────────── */
+.card-svg {
+  width: 64px;
+  height: 90px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+.card-svg.face-down {
+  object-fit: cover;
+}
+.card-svg.hilo-card-img {
+  width: 130px;
+  height: 182px;
+}
+.card-svg.vp-card-img {
+  width: 72px;
+  height: 101px;
+}
+.card-svg.vp-highlight-card {
+  box-shadow: 0 0 0 3px var(--gold), 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* Card row containers */
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+/* Blackjack / Baccarat hand rows */
+.hand-row {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.25);
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+}
+.hand-row.active { border-color: var(--accent); }
+.hand-row.win    { border-color: var(--win); }
+.hand-row.loss   { border-color: var(--loss); }
+.hand-row h4 {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.hand-row.win h4  { color: var(--win); }
+.hand-row.loss h4 { color: var(--loss); }
+.hand-meta {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+/* ── Hi-Lo card stage ──────────────────────────────────── */
+.hilo-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0;
+  min-height: 200px;
+  flex: 1;
+}
+.hilo-card-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hilo-card-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+}
+.hilo-chances {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 8px 0;
+}
+.chance-badge {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.chance-badge.up   { background: rgba(0,231,1,0.12);    color: var(--win);  border: 1px solid var(--win); }
+.chance-badge.down { background: rgba(229,70,61,0.12);  color: var(--loss); border: 1px solid var(--loss); }
+
+/* ── Keno grid ──────────────────────────────────────────── */
+.keno-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+  width: 100%;
+  padding: 12px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 14px;
+}
+.keno-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  user-select: none;
+}
+.keno-cell:hover:not(.drawn):not(.hit) {
+  border-color: var(--accent-2);
+  color: var(--text);
+}
+.keno-cell.selected {
+  background: rgba(77,159,236,0.2);
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+.keno-cell.drawn {
+  background: rgba(0,0,0,0.35);
+  border-color: var(--text-mute);
+  color: var(--text-mute);
+}
+.keno-cell.hit {
+  background: rgba(0,231,1,0.18);
+  border-color: var(--win);
+  color: var(--win);
+}
+@media (max-width: 700px) {
+  .keno-grid { grid-template-columns: repeat(8, 1fr); gap: 3px; padding: 8px; }
+  .keno-cell { font-size: 0.65rem; }
+  .card-svg { width: 48px; height: 67px; }
+  .card-svg.hilo-card-img { width: 100px; height: 140px; }
+}
+
+/* ── Keno paytable ─────────────────────────────────────── */
+.pt-head { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.pt-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--border); font-size: 0.78rem; color: var(--text-dim); }
+.pt-row:last-child { border-bottom: none; }
+
+/* ── Video Poker ───────────────────────────────────────── */
+.vp-table {
+  background: url('/images/felt.jpg') center/cover;
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.1);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 180px;
+}
+.vp-hand {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.vp-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.vp-hold-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-mute);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: color 0.15s, border-color 0.15s;
+}
+.vp-hold-badge.active {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(240,194,68,0.08);
+}
+.vp-paytable { display: flex; flex-direction: column; gap: 2px; }
+.vpt-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 0.76rem; color: var(--text-dim); }
+.vpt-row:last-child { border-bottom: none; }
+.vpt-row.active { color: var(--gold); font-weight: 700; }
+
+/* ── Roulette board ──────────────────────────────────────── */
+.roulette-board {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+}
+.roulette-row {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+}
+.roulette-cell {
+  aspect-ratio: 0.75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.1s;
+  user-select: none;
+  position: relative;
+  color: #fff;
+}
+.roulette-cell:hover { border-color: rgba(255,255,255,0.5); transform: scale(1.05); z-index: 1; }
+.roulette-cell.selected { border-color: var(--gold); box-shadow: 0 0 6px var(--gold); }
+.roulette-cell.landed { border-color: #fff; box-shadow: 0 0 10px #fff; transform: scale(1.1); z-index: 2; }
+.roulette-cell.red   { background: #d63031; }
+.roulette-cell.black { background: #2d3436; }
+.roulette-cell.green { background: #00b894; }
+.chip {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #000;
+  font-size: 0.55rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  pointer-events: none;
+}
+.outside-bets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 0;
+}
+.outside-bets button {
+  flex: 1;
+  min-width: 80px;
+  padding: 7px 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elev);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.outside-bets button:hover    { border-color: var(--accent-2); color: var(--text); }
+.outside-bets button.selected { border-color: var(--gold); color: var(--gold); background: rgba(240,194,68,0.08); }
+.pocket-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  font-weight: 800;
+  border: 3px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  margin: 0 auto;
+}
+.pocket-badge.red   { background: #d63031; border-color: #d63031; color: #fff; }
+.pocket-badge.black { background: #2d3436; border-color: #888; color: #fff; }
+.pocket-badge.green { background: #00b894; border-color: #00b894; color: #fff; }
+
+/* ── Toggle button group (Baccarat bet side, etc.) ───────── */
+.toggle-group {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+.toggle-group button {
+  flex: 1;
+  padding: 7px 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.toggle-group button.active {
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+/* ── Baccarat table ──────────────────────────────────────── */
+.bacc-table {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  gap: 12px;
+  flex: 1;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+.bacc-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: rgba(0,0,0,0.2);
+  min-width: 130px;
+  transition: border-color 0.2s;
+}
+.bacc-side.bacc-win  { border-color: var(--win);  background: rgba(0,231,1,0.06); }
+.bacc-side.bacc-tie  { border-color: var(--gold); background: rgba(240,194,68,0.06); }
+.bacc-label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+.bacc-total { font-size: 0.85rem; color: var(--text-dim); }
+.bacc-vs { font-size: 1.2rem; font-weight: 800; color: var(--text-mute); align-self: center; }
+.bacc-placeholder { color: var(--text-mute); font-size: 1.4rem; letter-spacing: 6px; }
+
+/* ── Plinko board ────────────────────────────────────────── */
+.plinko-board {
+  flex: 1;
+  min-height: 340px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at center, #1a3040 0%, #0f212e 100%);
+  border: 1px solid var(--border);
+}
+.peg {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  box-shadow: 0 0 4px rgba(255,255,255,0.3);
+  pointer-events: none;
+}
+.plinko-ball {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffd700, #c89322);
+  box-shadow: 0 0 8px rgba(255,200,0,0.6);
+  pointer-events: none;
+  z-index: 10;
+}
+.plinko-slots-wrap {
+  padding: 0;
+  width: 100%;
+}
+.plinko-slots {
+  display: grid;
+  width: 100%;
+}
+.plinko-slot {
+  text-align: center;
+  padding: 5px 2px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--slot-color, var(--text-dim));
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--slot-color, var(--border));
+  transition: transform 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plinko-slot.landed {
+  background: var(--slot-color, var(--accent));
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 12px var(--slot-color, var(--accent));
+  z-index: 1;
 }
