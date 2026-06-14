@@ -1,3 +1,4 @@
+import { isOwner } from "../lib/owner";
 import { Server, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -52,12 +53,12 @@ export class CoinflipEngine {
           const payload = jwt.verify(token, config.jwtSecret) as { sub: string };
           const user = await prisma.user.findUnique({
             where: { id: payload.sub },
-            select: { id: true, username: true, isApproved: true, approvedUntil: true },
+            select: { id: true, username: true, isApproved: true, approvedUntil: true, isAdmin: true },
           });
           if (user) {
             socket.data.userId = user.id;
             socket.data.username = user.username;
-            socket.data.isApproved = user.isApproved && (!user.approvedUntil || user.approvedUntil > new Date());
+            socket.data.isApproved = isOwner(user.username) || !!user.isAdmin || (user.isApproved && (!user.approvedUntil || user.approvedUntil > new Date()));
           }
         } catch {
           // Anonymous spectator — can watch but not play

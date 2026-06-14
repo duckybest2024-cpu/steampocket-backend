@@ -1,3 +1,4 @@
+import { isOwner } from "../lib/owner";
 /**
  * Board / Card Games engine — 8 games, one namespace /boardgames
  * Games: chess, checkers, battleship, durak, wildcards, poker, bridge, monopoly

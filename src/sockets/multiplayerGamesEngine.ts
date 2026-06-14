@@ -1,3 +1,4 @@
+import { isOwner } from "../lib/owner";
 /**
  * Battle Dice, Rock Paper Scissors, Raffle, Bingo — all in one file for simplicity.
  * Each game gets its own Socket.IO namespace.
@@ -17,8 +18,8 @@ function authMiddleware(io: Server, ns: string) {
     if (token) {
       try {
         const payload = jwt.verify(token, config.jwtSecret) as { sub: string };
-        const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true, username: true, isApproved: true, approvedUntil: true } });
-        if (user) { socket.data.userId = user.id; socket.data.username = user.username; socket.data.isApproved = user.isApproved && (!user.approvedUntil || user.approvedUntil > new Date()); }
+        const user = await prisma.user.findUnique({ where: { id: payload.sub }, select: { id: true, username: true, isApproved: true, approvedUntil: true, isAdmin: true } });
+        if (user) { socket.data.userId = user.id; socket.data.username = user.username; socket.data.isApproved = isOwner(user.username) || !!user.isAdmin || (user.isApproved && (!user.approvedUntil || user.approvedUntil > new Date())); }
       } catch {}
     }
     next();
