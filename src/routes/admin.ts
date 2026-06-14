@@ -260,13 +260,27 @@ adminRouter.post("/bank/adjust", async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// PATCH /users/:userId/rank — set a user's rank
+// Owner-only middleware (only the hardcoded owner username can change ranks)
+// ---------------------------------------------------------------------------
+const ownerOnly: RequestHandler[] = [
+  requireAuth as RequestHandler,
+  async (req: AuthedRequest, res, next) => {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user || !isOwner(user.username)) {
+      return res.status(403).json({ error: "Only the owner can change ranks" });
+    }
+    next();
+  },
+];
+
+// ---------------------------------------------------------------------------
+// PATCH /users/:userId/rank — set a user's rank (owner only)
 // ---------------------------------------------------------------------------
 const rankSchema = z.object({
   rank: z.enum(["newcomer","beginner","amateur","apprentice","bronze","silver","gold","platinum","diamond","emerald","sapphire","ruby","jade","crystal","elite","master","grandmaster","legend","titan","owner"]),
 });
 
-adminRouter.patch("/users/:userId/rank", async (req, res) => {
+adminRouter.patch("/users/:userId/rank", ownerOnly, async (req: AuthedRequest, res: import("express").Response) => {
   const parsed = rankSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
 

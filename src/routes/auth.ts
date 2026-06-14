@@ -7,6 +7,7 @@ import { signToken, requireAuth, AuthedRequest } from "../middleware/auth";
 import { createSeedPair } from "../lib/provablyFair";
 import { config } from "../lib/config";
 import { sendVerificationEmail } from "../lib/mailer";
+import { isOwner } from "../lib/owner";
 
 export const authRouter = Router();
 
@@ -14,7 +15,7 @@ const credentialsSchema = z.object({
   username: z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/, "letters, numbers, underscore only"),
   email: z.string().email(),
   password: z.string().min(8).max(72),
-  patreonUsername: z.string().min(2).max(50).optional(),
+  patreonUsername: z.string().min(2).max(50),
 });
 
 authRouter.post("/register", async (req, res) => {
@@ -200,7 +201,7 @@ export function publicUser(user: {
     id: user.id,
     username: user.username,
     nickname: user.nickname,
-    rank: user.rank,
+    rank: isOwner(user.username) ? "owner" : user.rank,
     email: user.email,
     balance: user.balance,
     bank: user.bank,
@@ -208,8 +209,8 @@ export function publicUser(user: {
     xp: user.xp,
     createdAt: user.createdAt,
     emailVerified: user.emailVerified,
-    isAdmin: user.isAdmin ?? false,
-    isApproved: user.isApproved ?? true,
+    isAdmin: (user.isAdmin ?? false) || isOwner(user.username),
+    isApproved: isOwner(user.username) ? true : (user.isApproved ?? true),
     approvedUntil: user.approvedUntil ?? null,
     patreonUsername: user.patreonUsername ?? null,
     patreonTier: user.patreonTier ?? null,

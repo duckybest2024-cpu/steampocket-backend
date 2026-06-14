@@ -33,6 +33,7 @@ const BoardGamesGame = (() => {
   let currentRoom    = null;   // room state object while in a room
   let myUserId       = null;
   let modalOpen      = false;
+  let _gameRunning   = false;  // true once we have called launchGameRenderer for the current room
 
   // ─── Normalize room data from backend ────────────────────────────────────
   // Backend uses `game` and `betChips`; frontend uses `gameId` and `bet`.
@@ -67,8 +68,13 @@ const BoardGamesGame = (() => {
     socket.on("bg:room-update", (roomState) => {
       currentRoom = normalizeRoom(roomState);
       if (currentRoom.status === "playing") {
-        launchGameRenderer(currentRoom);
+        if (!_gameRunning) {
+          _gameRunning = true;
+          launchGameRenderer(currentRoom);
+        }
+        // else: the individual game renderer handles its own bg:room-update
       } else {
+        _gameRunning = false;
         renderWaitingRoom(currentRoom);
       }
     });
@@ -276,10 +282,10 @@ const BoardGamesGame = (() => {
 
   function leaveRoom() {
     if (currentRoom) {
-      // Backend reads currentRoomId from socket state — no params needed
       socket.emit("bg:leave");
       currentRoom = null;
     }
+    _gameRunning = false;
     socket.emit("bg:rooms");
     renderLobby();
     attachLobbyListeners();
@@ -382,6 +388,7 @@ const BoardGamesGame = (() => {
     banner.querySelector(".bg-gameover__lobby-btn").addEventListener("click", () => {
       banner.remove();
       currentRoom = null;
+      _gameRunning = false;
       socket.emit("bg:rooms");
       renderLobby();
       attachLobbyListeners();
